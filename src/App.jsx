@@ -439,7 +439,7 @@ function Recommendations({ ratings }) {
   const generate = async () => {
     setLoading(true); setOutput(null); setError(null);
 
-    // Build score summary for the prompt
+    // Build score summary for the prompt using plain names only (no codes)
     let summary = "";
     const compScores = {};
     let total = 0;
@@ -447,40 +447,55 @@ function Recommendations({ ratings }) {
     COMP_KEYS.forEach(cKey => {
       const comp = B.components[cKey];
       let cs = 0;
+      const factorLines = [];
       Object.entries(comp.factors).forEach(([code, f]) => {
         const r = ratings[code] || 0;
         total += f.ow * r;
         cs += (f.ow / comp.groupWeight) * r;
-        summary += `  ${code} "${f.desc}": rated ${r}/5 (benchmark mean: ${f.mean})\n`;
+        const diff = r - Math.round(f.mean);
+        const diffLabel = diff > 0 ? `${diff} above avg` : diff < 0 ? `${Math.abs(diff)} below avg` : "at avg";
+        factorLines.push(`  "${f.desc}": rated ${r}/5 (industry avg: ${f.mean.toFixed(1)}, ${diffLabel})`);
       });
       compScores[cKey] = cs;
       const delta = cs - comp.importantIndex;
       const pct = comp.importantIndex > 0 ? ((delta / comp.importantIndex) * 100).toFixed(1) : "0";
-      summary += `  => ${comp.name} score: ${cs.toFixed(3)} (benchmark: ${comp.importantIndex}, ${delta >= 0 ? "+" : ""}${pct}%)\n\n`;
+      summary += `${comp.name} -- firm score: ${cs.toFixed(2)}, industry benchmark: ${comp.importantIndex.toFixed(2)} (${delta >= 0 ? "+" : ""}${pct}% vs benchmark)\n`;
+      factorLines.forEach(l => { summary += l + "\n"; });
+      summary += "\n";
     });
 
-    const prompt = `You are a senior KM advisor writing a brief for an A/E/C firm in a developing country.
+    const prompt = `You are a knowledge management advisor writing practical recommendations for an architecture, engineering, and construction (A/E/C) firm in a developing country.
 
-BACKGROUND:
-This firm completed a KMIC assessment based on a validated model (220 A/E/C practitioners, Vietnam, Fuzzy Synthetic Evaluation method). The model covers five components:
-- C1: Mutual Trust & Collaboration (benchmark: ${B.components.C1.importantIndex.toFixed(3)})
-- C2: Organizational Values & Norms (benchmark: ${B.components.C2.importantIndex.toFixed(3)})
-- C3: Information & Communication Systems (benchmark: ${B.components.C3.importantIndex.toFixed(3)})
-- C4: Organizational Policies (benchmark: ${B.components.C4.importantIndex.toFixed(3)})
-- C5: Employee Empowerment (benchmark: ${B.components.C5.importantIndex.toFixed(3)})
+CONTEXT:
+This firm completed a knowledge management infrastructure capability (KMIC) assessment. The model was validated through a survey of 220 A/E/C practitioners in Vietnam. It measures five areas:
+- Mutual Trust & Collaboration: how well employees trust and work with each other
+- Organizational Values & Norms: whether the culture encourages knowledge sharing, innovation, and learning
+- Information & Communication Systems: how effectively the firm uses tools, databases, and expert networks
+- Organizational Policies: whether clear written policies guide daily operations and communications
+- Employee Empowerment: whether employees have authority to make decisions and take action
 
-Key industry finding: Employee empowerment is the weakest area industry-wide, largely due to centralized decision-making norms. Organizational culture ranks as the strongest enabler.
+Industry-wide, employee empowerment is the weakest area due to centralized hierarchies. Organizational culture is the strongest enabler of knowledge management.
 
-THIS FIRM'S SCORES:
+THIS FIRM'S RESULTS:
 ${summary}
-Overall KMIC Index: ${total.toFixed(3)} (benchmark: ${B.overall.index})
+Overall KMIC Index: ${total.toFixed(3)} out of 5.0 (industry benchmark: ${B.overall.index})
 
-Write a short advisory note. Structure:
-1. One sentence summarizing the firm's overall position.
-2. Three to five specific, actionable recommendations. Focus on the weakest areas first. Each should name the component, state what to do, and why it matters for this firm specifically.
-3. If any component is notably strong, note it as a strength to maintain (one sentence max).
+WRITING RULES (follow strictly):
+- NEVER use codes like C1, C2, C3, C11, C22, C33, C41, C51, etc. Always use the plain name (e.g., "employee empowerment" not "C5", "trust in colleagues" not "C11").
+- Use simple, clear language that a non-academic manager can understand.
+- No citations or references to research papers.
+- No filler phrases like "This is consistent with..." or "Research suggests...".
 
-Keep total output under 250 words. No citations. No bullet sub-points. No generic KM advice. Be specific to the scores provided.`;
+FORMAT:
+1. Start with one short sentence on the firm's overall position relative to the benchmark.
+2. Then give 3 to 5 numbered recommendations. Each recommendation should:
+   - Name the area plainly (e.g., "Employee Empowerment" or "Information Systems")
+   - State one specific action to take
+   - Keep it to 1-2 sentences max
+   - Prioritize the weakest areas first
+3. End with one sentence noting the firm's strongest area as a strength to maintain (only if it is clearly above benchmark).
+
+Total output must be under 200 words. Be direct. No fluff.`;
 
     try {
       const resp = await fetch("/api/recommend", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({prompt}) });
