@@ -113,12 +113,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 .hist-arrow::after{content:'';width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--gold);margin-top:2px}
 .method-box{background:var(--input);border:1px solid var(--border);border-radius:var(--rs);padding:20px;font-size:13px;line-height:1.7;color:var(--t2)}
 .method-box h4{color:var(--t1);font-size:13px;font-weight:600;margin:14px 0 4px}.method-box h4:first-child{margin-top:0}
-.ai-box{background:var(--input);border:1px solid var(--border);border-radius:var(--rs);padding:20px;min-height:100px;font-size:14px;line-height:1.7;color:var(--t2)}
-.ai-box h4{color:var(--t1);margin:16px 0 6px;font-size:14px}.ai-box h4:first-child{margin-top:0}
-.ai-box ul{padding-left:18px;margin:8px 0}.ai-box li{margin-bottom:4px}
+.rec-text{font-size:14px;line-height:1.8;color:var(--t2)}
+.rec-text h4{color:var(--t1);margin:16px 0 6px;font-size:14px}.rec-text h4:first-child{margin-top:0}
+.rec-text ul{padding-left:18px;margin:8px 0}.rec-text li{margin-bottom:4px}
+.rec-text strong{color:var(--t1)}
 .ai-ld{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:14px}
 .spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.rec-disclaimer{text-align:right;font-size:11px;color:var(--t3);margin-top:16px;font-style:italic}
 footer{text-align:center;padding:40px 20px;font-size:12px;color:var(--t3);border-top:1px solid var(--border);margin-top:48px}
 @media(max-width:640px){.hdr{padding:32px 0 20px}.card{padding:20px 16px}.rb{width:48px}.rl{width:262px}.big-pct{font-size:56px}.btn{padding:14px 20px;font-size:14px}.sc{width:30px;height:30px;min-width:30px;font-size:12px}.pctl-num{font-size:32px}.hist-wrap{height:80px}}
 `;
@@ -232,7 +234,6 @@ function SegmentComparison({ compScores, userScore }) {
     peerComponents = sd.components;
   }
 
-  // FIX 1: Radar center shifted down from 210 to 260 for top label clearance
   const cx = 220, cy = 260, maxR = 150;
   const n = COMP_RANKED.length;
 
@@ -263,7 +264,6 @@ function SegmentComparison({ compScores, userScore }) {
     <div className="card">
       <div className="ch"><div><h2>KMIC Profile & Peer Comparison</h2><p>Your organization's profile compared against peer groups</p></div></div>
 
-      {/* Segment selector */}
       <div style={{display:"flex",gap:0,marginBottom:16,background:"var(--input)",borderRadius:8,padding:3,border:"1px solid var(--border)"}}>
         <button
           onClick={() => { setSegType("all"); setSegGroup(null); }}
@@ -289,7 +289,6 @@ function SegmentComparison({ compScores, userScore }) {
         ))}
       </div>
 
-      {/* Subgroup pills */}
       {segType !== "all" && (
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16,justifyContent:"center"}}>
           {segOptions[segType].groups.map(g => {
@@ -314,15 +313,12 @@ function SegmentComparison({ compScores, userScore }) {
         <p style={{color:"var(--t3)",fontSize:12,textAlign:"center",marginBottom:12}}>Select a group above, or viewing all firms by default</p>
       )}
 
-      {/* FIX 3: increased marginTop from 8 to 24 for extra spacing below pills */}
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:24}}>
-        {/* FIX 2: viewBox expanded from 430 to 540 to contain shifted labels */}
         <svg viewBox="-80 0 600 540" style={{width:"100%",maxWidth:560}}>
           <defs>
             <filter id="glow-g"><feGaussianBlur stdDeviation="4" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
 
-          {/* Grid rings */}
           {gridLevels.map(lv => {
             const r = valToR(lv);
             const pts = Array.from({length: n}, (_, i) => {
@@ -337,13 +333,11 @@ function SegmentComparison({ compScores, userScore }) {
             );
           })}
 
-          {/* Axis lines */}
           {COMP_RANKED.map((_, i) => {
             const outerPt = ptAt(i, 5);
             return <line key={i} x1={cx} y1={cy} x2={outerPt.x} y2={outerPt.y} stroke="#1E2D4A" strokeWidth="1"/>;
           })}
 
-          {/* Gap fill */}
           {(() => {
             const segments = [];
             for (let i = 0; i < n; i++) {
@@ -363,17 +357,14 @@ function SegmentComparison({ compScores, userScore }) {
             return segments;
           })()}
 
-          {/* Peer polygon */}
           <polygon points={polyPoints(peerVals)}
             fill="rgba(91,138,239,0.06)" stroke="#5B8AEF" strokeWidth="2"
             strokeDasharray="6 4" opacity="0.9"/>
 
-          {/* User polygon */}
           <polygon points={polyPoints(userVals)}
             fill="rgba(212,168,83,0.1)" stroke="#D4A853" strokeWidth="2.5"
             filter="url(#glow-g)"/>
 
-          {/* Data points and labels */}
           {COMP_RANKED.map((cKey, i) => {
             const comp = B.components[cKey];
             const uPt = ptAt(i, userVals[i]);
@@ -421,12 +412,10 @@ function SegmentComparison({ compScores, userScore }) {
             );
           })}
 
-          {/* Center info */}
           <text x={cx} y={cy - 10} fill="#E8ECF4" fontSize="13" fontWeight="600" textAnchor="middle">{peerLabel}</text>
           <text x={cx} y={cy + 8} fill="#8899B4" fontSize="11" textAnchor="middle">n = {peerN}</text>
         </svg>
 
-        {/* Legend */}
         <div style={{display:"flex",gap:24,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
             <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#D4A853" strokeWidth="2.5"/></svg>
@@ -442,47 +431,56 @@ function SegmentComparison({ compScores, userScore }) {
   );
 }
 
-function AIRecommendations({ ratings }) {
+function Recommendations({ ratings }) {
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const generate = async () => {
     setLoading(true); setOutput(null); setError(null);
+
+    // Build score summary for the prompt
     let summary = "";
+    const compScores = {};
+    let total = 0;
+
     COMP_KEYS.forEach(cKey => {
       const comp = B.components[cKey];
       let cs = 0;
       Object.entries(comp.factors).forEach(([code, f]) => {
-        const r = ratings[code]||0;
+        const r = ratings[code] || 0;
+        total += f.ow * r;
         cs += (f.ow / comp.groupWeight) * r;
-        summary += `  "${f.desc}": rated ${r}/5 (survey avg: ${f.mean})\n`;
+        summary += `  ${code} "${f.desc}": rated ${r}/5 (benchmark mean: ${f.mean})\n`;
       });
-      summary += `  => ${comp.name} score: ${cs.toFixed(3)} (benchmark: ${comp.importantIndex})\n\n`;
+      compScores[cKey] = cs;
+      const delta = cs - comp.importantIndex;
+      const pct = comp.importantIndex > 0 ? ((delta / comp.importantIndex) * 100).toFixed(1) : "0";
+      summary += `  => ${comp.name} score: ${cs.toFixed(3)} (benchmark: ${comp.importantIndex}, ${delta >= 0 ? "+" : ""}${pct}%)\n\n`;
     });
-    let total = 0;
-    Object.keys(B.overallWeights).forEach(f => { total += B.overallWeights[f] * (ratings[f]||0); });
 
-    const prompt = `You are a senior Knowledge Management consultant advising an A/E/C organization in a developing country. Your recommendations must be specific, actionable, and grounded in published research.
+    const prompt = `You are a senior KM advisor writing a brief for an A/E/C firm in a developing country.
 
-CONTEXT:
-This organization completed a KMIC assessment based on a validated model surveying ${B.overall.n} A/E/C practitioners. Their overall KMIC Index is ${total.toFixed(3)} out of 5.0 (industry benchmark: ${B.overall.index}).
+BACKGROUND:
+This firm completed a KMIC assessment based on a validated model (220 A/E/C practitioners, Vietnam, Fuzzy Synthetic Evaluation method). The model covers five components:
+- C1: Mutual Trust & Collaboration (benchmark: ${B.components.C1.importantIndex.toFixed(3)})
+- C2: Organizational Values & Norms (benchmark: ${B.components.C2.importantIndex.toFixed(3)})
+- C3: Information & Communication Systems (benchmark: ${B.components.C3.importantIndex.toFixed(3)})
+- C4: Organizational Policies (benchmark: ${B.components.C4.importantIndex.toFixed(3)})
+- C5: Employee Empowerment (benchmark: ${B.components.C5.importantIndex.toFixed(3)})
 
-SCORES BY COMPONENT:
+Key industry finding: Employee empowerment is the weakest area industry-wide, largely due to centralized decision-making norms. Organizational culture ranks as the strongest enabler.
+
+THIS FIRM'S SCORES:
 ${summary}
+Overall KMIC Index: ${total.toFixed(3)} (benchmark: ${B.overall.index})
 
-YOUR TASK:
-Do NOT repeat the scores. Provide a practical action plan:
+Write a short advisory note. Structure:
+1. One sentence summarizing the firm's overall position.
+2. Three to five specific, actionable recommendations. Focus on the weakest areas first. Each should name the component, state what to do, and why it matters for this firm specifically.
+3. If any component is notably strong, note it as a strength to maintain (one sentence max).
 
-1. DIAGNOSIS (3-4 sentences): What does this profile reveal about the organization's KM maturity?
-
-2. IMMEDIATE WINS (next 1-3 months): 2-3 low-cost, quick actions. Be specific. Cite relevant research.
-
-3. STRATEGIC INITIATIVES (3-12 months): 3-4 larger interventions with resources and expected outcomes.
-
-4. WHAT TO AVOID: 2 common mistakes this type of organization makes.
-
-Write in a direct, advisory tone. Use markdown headers and bullet points.`;
+Keep total output under 250 words. No citations. No bullet sub-points. No generic KM advice. Be specific to the scores provided.`;
 
     try {
       const resp = await fetch("/api/recommend", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({prompt}) });
@@ -494,17 +492,43 @@ Write in a direct, advisory tone. Use markdown headers and bullet points.`;
 
   useEffect(() => { generate(); }, []);
 
-  const fmt = t => t.replace(/### (.*)/g,"<h4>$1</h4>").replace(/## (.*)/g,"<h4>$1</h4>").replace(/# (.*)/g,"<h4>$1</h4>").replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>").replace(/^- (.*)/gm,"<li>$1</li>").replace(/(<li>.*<\/li>)/gs,"<ul>$1</ul>").replace(/<\/ul>\s*<ul>/g,"").replace(/\n{2,}/g,"<br><br>").replace(/\n/g,"<br>");
+  const fmt = t => t
+    .replace(/### (.*)/g,"<h4>$1</h4>")
+    .replace(/## (.*)/g,"<h4>$1</h4>")
+    .replace(/# (.*)/g,"<h4>$1</h4>")
+    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g,"<em>$1</em>")
+    .replace(/^- (.*)/gm,"<li>$1</li>")
+    .replace(/^(\d+)\. (.*)/gm,"<li>$2</li>")
+    .replace(/(<li>.*<\/li>)/gs,"<ul>$1</ul>")
+    .replace(/<\/ul>\s*<ul>/g,"")
+    .replace(/\n{2,}/g,"<br><br>")
+    .replace(/\n/g,"<br>");
 
   return (
     <div className="card">
-      <div className="ch"><div><h2>{"\u2728"} AI-Powered Action Plan</h2><p>Practical improvement strategies grounded in KM research</p></div></div>
-      <div className="ai-box">
-        {loading ? <div className="ai-ld"><div className="spin"/>Analyzing your profile...</div>
-        : error ? <div><p style={{color:"var(--red)",marginBottom:12}}>{error}</p><button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Try Again</button></div>
-        : output ? <div><div dangerouslySetInnerHTML={{__html:fmt(output)}}/><div style={{marginTop:16,paddingTop:12,borderTop:"1px solid var(--border)"}}><button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Regenerate</button></div></div>
-        : null}
+      <div className="ch">
+        <div>
+          <h2>Recommendations</h2>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="ai-ld"><div className="spin"/>Analyzing your profile...</div>
+      ) : error ? (
+        <div>
+          <p style={{color:"var(--red)",marginBottom:12}}>{error}</p>
+          <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Try Again</button>
+        </div>
+      ) : output ? (
+        <div>
+          <div className="rec-text" dangerouslySetInnerHTML={{__html:fmt(output)}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,paddingTop:12,borderTop:"1px solid var(--border)"}}>
+            <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Regenerate</button>
+            <span className="rec-disclaimer">Recommendation synthesis assisted by Gemini 2.5 Flash Lite</span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -549,7 +573,6 @@ function ResultsSection({ ratings, onReset }) {
           <div className="lvl" style={{background:level.color}}>{level.text}</div>
         </div>
 
-        {/* Percentile */}
         <div className="pctl">
           <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}>
             <span className="pctl-num">{percentile}<sup style={{fontSize:16,verticalAlign:"super"}}>{percentile===1?"st":percentile===2?"nd":percentile===3?"rd":"th"}</sup></span>
@@ -560,7 +583,6 @@ function ResultsSection({ ratings, onReset }) {
           </div>
         </div>
 
-        {/* Benchmark bar */}
         <div style={{padding:"16px 8px 0"}}>
           <div className="bbar">
             <div className="bfill" style={{width:`${((kmicIndex - 1) / 4) * 100}%`}}/>
@@ -582,14 +604,12 @@ function ResultsSection({ ratings, onReset }) {
       <div className="card">
         <div className="ch"><div><h2>Component Breakdown</h2><p>How your organization compares across five KMIC dimensions</p></div></div>
 
-        {/* Interpretation note */}
         <div style={{background:"var(--input)",border:"1px solid var(--border)",borderRadius:6,padding:16,marginBottom:20,fontSize:12,lineHeight:1.8,color:"var(--t2)"}}>
           <strong style={{color:"var(--gold)",fontSize:13}}>Powered by Fuzzy Synthetic Evaluation (FSE)</strong>
           <br/>
           Unlike simple averaging, this analysis uses the FSE method to capture the full picture of how {B.overall.n} surveyed firms actually responded. Instead of reducing everything to a single number, the colored bar below shows the distribution of responses across five levels (Very Low to Very High), so you can see where most firms cluster and how spread out the opinions are. Your firm's category is highlighted in full color. The scale bar underneath shows your exact score (gold dot) compared to the survey average (gray line) on a 1 to 5 scale.
         </div>
 
-        {/* Compact legend */}
         <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20,justifyContent:"center"}}>
           {DIST_LABELS.map((l,i) => (
             <div key={l} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--t2)"}}>
@@ -659,7 +679,6 @@ function ResultsSection({ ratings, onReset }) {
                 </div>
                 </div>
 
-                {/* Linear scale bar */}
                 <div style={{position:"relative",marginTop:14}}>
                   <div style={{height:6,background:"var(--input)",borderRadius:100,position:"relative",overflow:"visible"}}>
                     <div style={{height:"100%",borderRadius:100,background:COMP_COLORS_MAP[cKey],width:`${userLinear}%`,transition:"width .6s"}}/>
@@ -722,8 +741,8 @@ function ResultsSection({ ratings, onReset }) {
         </div>
       </div>
 
-      {/* AI */}
-      <AIRecommendations ratings={ratings}/>
+      {/* Recommendations */}
+      <Recommendations ratings={ratings}/>
 
       <div className="br" style={{marginBottom:40}}>
         <button className="btn btn-s" onClick={onReset}>{"\u21BA"} Start Over</button>
