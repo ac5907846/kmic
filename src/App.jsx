@@ -1,736 +1,788 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
-// ─── DATA MODEL (Tables 4, 6, 7 from paper) ───
-const KMIC_DATA = {
-  c1: {
-    name: "Mutual Trust & Collaboration",
-    shortName: "Trust & Collaboration",
-    icon: "\u2665",
-    groupWeight: 0.205,
-    benchmarkIndex: 3.780,
-    theme: { bg: "rgba(91,138,239,0.15)", color: "#5B8AEF" },
-    factors: [
-      { code: "C11", desc: "Trust in colleagues' abilities", ow: 0.0305, surveyMean: 3.605, dist: [0.0, 7.7, 38.2, 40.0, 14.1] },
-      { code: "C12", desc: "Trust in colleagues' attitudes to work toward organizational goals", ow: 0.0347, surveyMean: 3.641, dist: [1.4, 10.5, 30.5, 38.2, 19.5] },
-      { code: "C13", desc: "Trust in colleagues' decisions toward organizational interests", ow: 0.0320, surveyMean: 3.655, dist: [1.4, 9.1, 30.5, 40.9, 18.2] },
-      { code: "C14", desc: "Employees' willingness to collaborate with others", ow: 0.0345, surveyMean: 3.927, dist: [1.4, 6.4, 17.7, 47.3, 27.3] },
-      { code: "C15", desc: "Employees' willingness to support others", ow: 0.0374, surveyMean: 3.959, dist: [0.9, 5.9, 17.7, 47.3, 28.2] },
-      { code: "C16", desc: "Employees' willingness to take responsibility in coordination", ow: 0.0358, surveyMean: 3.850, dist: [0.0, 7.7, 23.6, 44.5, 24.1] },
-    ],
-  },
-  c2: {
-    name: "Organizational Values & Norms",
-    shortName: "Values & Norms",
-    icon: "\u2733",
-    groupWeight: 0.213,
-    benchmarkIndex: 3.923,
-    theme: { bg: "rgba(212,168,83,0.15)", color: "#E8C97A" },
-    factors: [
-      { code: "C21", desc: "Promoting knowledge sharing", ow: 0.0428, surveyMean: 4.082, dist: [0.9, 5.9, 16.4, 37.7, 39.1] },
-      { code: "C22", desc: "Facilitating employees to foster knowledge and skills", ow: 0.0409, surveyMean: 3.786, dist: [2.7, 8.2, 26.4, 33.2, 29.5] },
-      { code: "C23", desc: "Promoting strategic collaborations to acquire knowledge", ow: 0.0457, surveyMean: 3.691, dist: [1.4, 11.8, 28.6, 32.7, 25.5] },
-      { code: "C24", desc: "Encouraging employees to be creative and innovative at work", ow: 0.0413, surveyMean: 4.036, dist: [1.4, 5.0, 19.5, 36.8, 37.3] },
-      { code: "C25", desc: "Facilitating employees' experiential learning", ow: 0.0422, surveyMean: 3.986, dist: [1.4, 4.5, 20.9, 40.5, 32.7] },
-    ],
-  },
-  c3: {
-    name: "Information & Communication Systems",
-    shortName: "Info & Comm Systems",
-    icon: "\u2699",
-    groupWeight: 0.201,
-    benchmarkIndex: 3.708,
-    theme: { bg: "rgba(52,199,123,0.15)", color: "#34C77B" },
-    factors: [
-      { code: "C31", desc: "Effective use of internal communication channels", ow: 0.0385, surveyMean: 3.805, dist: [0.9, 9.1, 23.6, 41.4, 25.0] },
-      { code: "C32", desc: "Effective use of external communication channels", ow: 0.0397, surveyMean: 3.627, dist: [1.4, 11.4, 27.7, 42.3, 17.3] },
-      { code: "C33", desc: "Information systems available for sharing experience and knowledge", ow: 0.0429, surveyMean: 3.668, dist: [5.0, 9.5, 25.0, 34.5, 25.9] },
-      { code: "C34", desc: "Information system available for managerial activities", ow: 0.0403, surveyMean: 3.736, dist: [5.0, 8.6, 22.7, 35.0, 28.6] },
-      { code: "C35", desc: "Encouraging interactions with experts", ow: 0.0395, surveyMean: 3.700, dist: [3.6, 8.6, 27.3, 35.0, 25.5] },
-    ],
-  },
-  c4: {
-    name: "Organizational Policies",
-    shortName: "Org Policies",
-    icon: "\u2696",
-    groupWeight: 0.212,
-    benchmarkIndex: 3.914,
-    theme: { bg: "rgba(232,145,58,0.15)", color: "#E8913A" },
-    factors: [
-      { code: "C41", desc: "Operations aligning with firm policies", ow: 0.0729, surveyMean: 4.032, dist: [0.5, 4.1, 19.5, 43.6, 32.3] },
-      { code: "C42", desc: "External and internal communications aligning with firm policies", ow: 0.0863, surveyMean: 3.718, dist: [0.0, 10.9, 25.0, 45.5, 18.6] },
-      { code: "C43", desc: "Firm policies available in writing", ow: 0.0529, surveyMean: 3.982, dist: [2.7, 5.0, 15.0, 45.9, 31.4] },
-    ],
-  },
-  c5: {
-    name: "Employee Empowerment",
-    shortName: "Empowerment",
-    icon: "\u26A1",
-    groupWeight: 0.169,
-    benchmarkIndex: 3.127,
-    theme: { bg: "rgba(224,82,82,0.15)", color: "#E05252" },
-    factors: [
-      { code: "C51", desc: "Empowering employees to take action within authority", ow: 0.0912, surveyMean: 3.268, dist: [9.1, 15.0, 30.0, 31.8, 14.1] },
-      { code: "C52", desc: "Empowering employees to make decisions", ow: 0.0778, surveyMean: 2.977, dist: [13.2, 20.9, 30.0, 26.8, 9.1] },
-    ],
-  },
+// ── FSE BENCHMARK DATA (from kmic_analysis_fse.py) ──
+const B = {"overall":{"index":3.7663,"membership":[0.0241,0.0861,0.2428,0.3933,0.2537],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.647},"n":220},"groupWeights":{"C1":0.2047,"C2":0.2125,"C3":0.201,"C4":0.2122,"C5":0.1696},"overallWeights":{"C11":0.0305,"C12":0.0347,"C13":0.032,"C14":0.0344,"C15":0.0374,"C16":0.0358,"C21":0.0427,"C22":0.0408,"C23":0.0456,"C24":0.0413,"C25":0.0421,"C31":0.0385,"C32":0.0397,"C33":0.0429,"C34":0.0403,"C35":0.0395,"C41":0.0729,"C42":0.0863,"C43":0.0529,"C51":0.0915,"C52":0.0781},"components":{"C1":{"name":"Mutual Trust & Collaboration","shortName":"Trust & Collaboration","importantIndex":3.7782,"groupWeight":0.2047,"membership":[0.0084,0.0783,0.2609,0.4316,0.2208],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6524},"rank":3,"factors":{"C11":{"desc":"Trust in colleagues' abilities","mean":3.605,"std":0.824,"membership":[0.0,0.0773,0.3818,0.4,0.1409],"importantIndex":3.6045,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5409},"localWeight":0.1592,"ow":0.0305},"C12":{"desc":"Trust in colleagues' attitudes to work toward organizational goals","mean":3.641,"std":0.957,"membership":[0.0136,0.1045,0.3045,0.3818,0.1955],"importantIndex":3.6409,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5773},"localWeight":0.1608,"ow":0.0347},"C13":{"desc":"Trust in colleagues' decisions toward organizational interests","mean":3.655,"std":0.926,"membership":[0.0136,0.0909,0.3045,0.4091,0.1818],"importantIndex":3.6545,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5909},"localWeight":0.1614,"ow":0.032},"C14":{"desc":"Employees' willingness to collaborate with others","mean":3.927,"std":0.909,"membership":[0.0136,0.0636,0.1773,0.4727,0.2727],"importantIndex":3.9273,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7455},"localWeight":0.1735,"ow":0.0344},"C15":{"desc":"Employees' willingness to support others","mean":3.959,"std":0.883,"membership":[0.0091,0.0591,0.1773,0.4727,0.2818],"importantIndex":3.9591,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7545},"localWeight":0.1749,"ow":0.0374},"C16":{"desc":"Employees' willingness to take responsibility in coordination","mean":3.85,"std":0.876,"membership":[0.0,0.0773,0.2364,0.4455,0.2409],"importantIndex":3.85,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6864},"localWeight":0.1701,"ow":0.0358}}},"C2":{"name":"Organizational Values & Norms","shortName":"Values & Norms","importantIndex":3.9222,"groupWeight":0.2125,"membership":[0.0153,0.07,0.2219,0.3627,0.33],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6928},"rank":1,"factors":{"C21":{"desc":"Promoting knowledge sharing","mean":4.082,"std":0.933,"membership":[0.0091,0.0591,0.1636,0.3773,0.3909],"importantIndex":4.0818,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7682},"localWeight":0.2084,"ow":0.0427},"C22":{"desc":"Facilitating employees to foster knowledge and skills","mean":3.786,"std":1.045,"membership":[0.0273,0.0818,0.2636,0.3318,0.2955],"importantIndex":3.7864,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6273},"localWeight":0.1934,"ow":0.0408},"C23":{"desc":"Promoting strategic collaborations to acquire knowledge","mean":3.691,"std":1.023,"membership":[0.0136,0.1182,0.2864,0.3273,0.2545],"importantIndex":3.6909,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5818},"localWeight":0.1885,"ow":0.0456},"C24":{"desc":"Encouraging employees to be creative and innovative at work","mean":4.036,"std":0.945,"membership":[0.0136,0.05,0.1955,0.3682,0.3727],"importantIndex":4.0364,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7409},"localWeight":0.2061,"ow":0.0413},"C25":{"desc":"Facilitating employees' experiential learning","mean":3.986,"std":0.919,"membership":[0.0136,0.0455,0.2091,0.4045,0.3273],"importantIndex":3.9864,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7318},"localWeight":0.2036,"ow":0.0421}}},"C3":{"name":"Information & Communication Systems","shortName":"Info & Comm Systems","importantIndex":3.7083,"groupWeight":0.201,"membership":[0.0318,0.0944,0.2525,0.3764,0.2449],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6213},"rank":4,"factors":{"C31":{"desc":"Effective use of internal communication channels","mean":3.805,"std":0.947,"membership":[0.0091,0.0909,0.2364,0.4136,0.25],"importantIndex":3.8045,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6636},"localWeight":0.2052,"ow":0.0385},"C32":{"desc":"Effective use of external communication channels","mean":3.627,"std":0.945,"membership":[0.0136,0.1136,0.2773,0.4227,0.1727],"importantIndex":3.6273,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5955},"localWeight":0.1957,"ow":0.0397},"C33":{"desc":"Information systems available for sharing experience and knowledge","mean":3.668,"std":1.112,"membership":[0.05,0.0955,0.25,0.3455,0.2591],"importantIndex":3.6682,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6045},"localWeight":0.1979,"ow":0.0429},"C34":{"desc":"Information system available for managerial activities","mean":3.736,"std":1.116,"membership":[0.05,0.0864,0.2273,0.35,0.2864],"importantIndex":3.7364,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6364},"localWeight":0.2016,"ow":0.0403},"C35":{"desc":"Encouraging interactions with experts","mean":3.7,"std":1.056,"membership":[0.0364,0.0864,0.2727,0.35,0.2545],"importantIndex":3.7,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6045},"localWeight":0.1996,"ow":0.0395}}},"C4":{"name":"Organizational Policies","shortName":"Org Policies","importantIndex":3.9154,"groupWeight":0.2122,"membership":[0.0108,0.0656,0.1973,0.4498,0.2764],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7263},"rank":2,"factors":{"C41":{"desc":"Operations aligning with firm policies","mean":4.032,"std":0.851,"membership":[0.0045,0.0409,0.1955,0.4364,0.3227],"importantIndex":4.0318,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7591},"localWeight":0.3437,"ow":0.0729},"C42":{"desc":"External and internal communications aligning with firm policies","mean":3.718,"std":0.893,"membership":[0.0,0.1091,0.25,0.4545,0.1864],"importantIndex":3.7182,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6409},"localWeight":0.3169,"ow":0.0863},"C43":{"desc":"Firm policies available in writing","mean":3.982,"std":0.955,"membership":[0.0273,0.05,0.15,0.4591,0.3136],"importantIndex":3.9818,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7727},"localWeight":0.3394,"ow":0.0529}}},"C5":{"name":"Employee Empowerment","shortName":"Empowerment","importantIndex":3.1295,"groupWeight":0.1696,"membership":[0.1104,0.1782,0.3,0.2943,0.1171],"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.7114},"rank":5,"factors":{"C51":{"desc":"Empowering employees to take action within authority","mean":3.268,"std":1.153,"membership":[0.0909,0.15,0.3,0.3182,0.1409],"importantIndex":3.2682,"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.7591},"localWeight":0.5233,"ow":0.0915},"C52":{"desc":"Empowering employees to make decisions","mean":2.977,"std":1.172,"membership":[0.1318,0.2091,0.3,0.2682,0.0909],"importantIndex":2.9773,"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.6591},"localWeight":0.4767,"ow":0.0781}}}},"percentileTable":{"0":2.0447,"1":2.333,"2":2.3717,"3":2.4674,"4":2.5157,"5":2.6471,"6":2.6938,"7":2.7153,"8":2.7607,"9":2.7879,"10":2.8047,"11":2.8986,"12":2.9501,"13":3.0157,"14":3.0604,"15":3.087,"16":3.1235,"17":3.1352,"18":3.1776,"19":3.1904,"20":3.199,"21":3.214,"22":3.2517,"23":3.2992,"24":3.3244,"25":3.3526,"26":3.3636,"27":3.3774,"28":3.3878,"29":3.416,"30":3.4435,"31":3.4689,"32":3.497,"33":3.5208,"34":3.539,"35":3.5458,"36":3.5633,"37":3.5885,"38":3.6,"39":3.6182,"40":3.6264,"41":3.632,"42":3.6493,"43":3.6623,"44":3.6793,"45":3.6972,"46":3.7108,"47":3.7424,"48":3.7468,"49":3.7564,"50":3.7695,"51":3.7846,"52":3.7938,"53":3.808,"54":3.8138,"55":3.8172,"56":3.8332,"57":3.8407,"58":3.848,"59":3.8615,"60":3.8698,"61":3.8739,"62":3.8862,"63":3.9066,"64":3.9343,"65":3.9568,"66":3.9825,"67":3.9993,"68":4.0067,"69":4.0212,"70":4.074,"71":4.0821,"72":4.0953,"73":4.1017,"74":4.1072,"75":4.1117,"76":4.1136,"77":4.1196,"78":4.131,"79":4.1664,"80":4.1934,"81":4.204,"82":4.2186,"83":4.2352,"84":4.2799,"85":4.3064,"86":4.3169,"87":4.3449,"88":4.3825,"89":4.408,"90":4.4476,"91":4.4802,"92":4.5293,"93":4.5988,"94":4.6493,"95":4.6615,"96":4.7274,"97":4.775,"98":4.7974,"99":4.8943,"100":4.9219},"eiHistogram":[{"binStart":2.0,"binEnd":2.25,"count":2,"pct":0.9},{"binStart":2.25,"binEnd":2.5,"count":7,"pct":3.2},{"binStart":2.5,"binEnd":2.75,"count":7,"pct":3.2},{"binStart":2.75,"binEnd":3.0,"count":13,"pct":5.9},{"binStart":3.0,"binEnd":3.25,"count":20,"pct":9.1},{"binStart":3.25,"binEnd":3.5,"count":22,"pct":10.0},{"binStart":3.5,"binEnd":3.75,"count":36,"pct":16.4},{"binStart":3.75,"binEnd":4.0,"count":41,"pct":18.6},{"binStart":4.0,"binEnd":4.25,"count":35,"pct":15.9},{"binStart":4.25,"binEnd":4.5,"count":17,"pct":7.7},{"binStart":4.5,"binEnd":4.75,"count":12,"pct":5.5},{"binStart":4.75,"binEnd":5.0,"count":8,"pct":3.6}],"segmented":{"firmType":{"Construction firms":{"n":113,"overallIndex":3.7665,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6485},"components":{"C1":{"importantIndex":3.8038,"membership":[0.0118,0.0632,0.2646,0.4304,0.2301]},"C2":{"importantIndex":3.8915,"membership":[0.0158,0.0665,0.2326,0.3809,0.3043]},"C3":{"importantIndex":3.7084,"membership":[0.0245,0.0898,0.2671,0.3902,0.2285]},"C4":{"importantIndex":3.8817,"membership":[0.0092,0.0605,0.2066,0.4869,0.2368]},"C5":{"importantIndex":3.2118,"membership":[0.0839,0.1715,0.3006,0.3369,0.1071]}}},"Engineering/design firms":{"n":107,"overallIndex":3.7688,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6463},"components":{"C1":{"importantIndex":3.7517,"membership":[0.0047,0.0941,0.257,0.4329,0.2112]},"C2":{"importantIndex":3.955,"membership":[0.0148,0.0737,0.2104,0.344,0.3572]},"C3":{"importantIndex":3.7103,"membership":[0.0395,0.0986,0.2368,0.3623,0.2628]},"C4":{"importantIndex":3.9536,"membership":[0.0124,0.0709,0.1869,0.4104,0.3194]},"C5":{"importantIndex":3.0437,"membership":[0.1379,0.1852,0.2996,0.2496,0.1276]}}}},"firmSize":{"Large":{"n":91,"overallIndex":3.8141,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6694},"components":{"C1":{"importantIndex":3.81,"membership":[0.011,0.0691,0.2453,0.4477,0.2268]},"C2":{"importantIndex":3.9345,"membership":[0.0132,0.057,0.2294,0.3828,0.3176]},"C3":{"importantIndex":3.8021,"membership":[0.0284,0.0725,0.2495,0.3676,0.2819]},"C4":{"importantIndex":4.0014,"membership":[0.0039,0.0642,0.1523,0.4861,0.2935]},"C5":{"importantIndex":3.1299,"membership":[0.1038,0.1921,0.302,0.2744,0.1277]}}},"Small/medium":{"n":129,"overallIndex":3.7342,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6318},"components":{"C1":{"importantIndex":3.7564,"membership":[0.0064,0.0847,0.2716,0.4205,0.2167]},"C2":{"importantIndex":3.9149,"membership":[0.0167,0.0787,0.2165,0.3492,0.3389]},"C3":{"importantIndex":3.6423,"membership":[0.0341,0.11,0.2543,0.3828,0.2188]},"C4":{"importantIndex":3.8576,"membership":[0.0155,0.0663,0.2289,0.4236,0.2657]},"C5":{"importantIndex":3.1299,"membership":[0.115,0.1679,0.2987,0.309,0.1094]}}}}},"correlations":{"C1-C2":0.5974,"C1-C3":0.6257,"C1-C4":0.4857,"C1-C5":0.2968,"C2-C3":0.5943,"C2-C4":0.4042,"C2-C5":0.276,"C3-C4":0.5234,"C3-C5":0.2352,"C4-C5":0.102}};
+
+const COMP_KEYS = ["C1","C2","C3","C4","C5"];
+// Sorted component keys by rank for display
+const COMP_RANKED = [...COMP_KEYS].sort((a,b) => B.components[a].rank - B.components[b].rank);
+const COMP_COLORS_MAP = {"C1":"#5B8AEF","C2":"#E8C97A","C3":"#34C77B","C4":"#E8913A","C5":"#E05252"};
+const COMP_ICONS_MAP = {"C1":"\u2665","C2":"\u2733","C3":"\u2699","C4":"\u2696","C5":"\u26A1"};
+const COMP_BG_MAP = {"C1":"rgba(91,138,239,0.15)","C2":"rgba(212,168,83,0.15)","C3":"rgba(52,199,123,0.15)","C4":"rgba(232,145,58,0.15)","C5":"rgba(224,82,82,0.15)"};
+const DIST_COLORS = ["#E05252","#E8913A","#8899B4","#5B8AEF","#34C77B"];
+const DIST_LABELS = ["Very Low","Low","Medium","High","Very High"];
+const COMP_SUBTITLES = {
+  C1: "e.g., trusting colleagues, supporting each other, collaborating willingly",
+  C2: "e.g., encouraging knowledge sharing, innovation, and continuous learning",
+  C3: "e.g., using communication tools, databases, and expert networks effectively",
+  C4: "e.g., having clear written policies that guide daily operations",
+  C5: "e.g., giving employees authority to make decisions and take action",
 };
 
-const COMPONENT_KEYS = ["c1", "c2", "c3", "c4", "c5"];
-const COMPONENT_COLORS = ["#5B8AEF", "#E8C97A", "#34C77B", "#E8913A", "#E05252"];
-const SURVEY_OVERALL = 3.767;
-const DIST_COLORS = ["#E05252", "#E8913A", "#8899B4", "#5B8AEF", "#34C77B"];
-const DIST_LABELS = ["Very Low", "Low", "Medium", "High", "Very High"];
+function getLevel(idx) {
+  if (idx >= 4.2) return { text: "Very High", color: "#34C77B" };
+  if (idx >= 3.4) return { text: "High", color: "#5B8AEF" };
+  if (idx >= 2.6) return { text: "Moderate", color: "#E8913A" };
+  if (idx >= 1.8) return { text: "Low", color: "#E05252" };
+  return { text: "Very Low", color: "#E05252" };
+}
 
-// ─── Styles ───
+function getPercentile(score) {
+  const table = B.percentileTable;
+  const keys = Object.keys(table).map(Number).sort((a,b) => a - b);
+  for (let i = keys.length - 1; i >= 0; i--) {
+    if (score >= table[String(keys[i])]) return keys[i];
+  }
+  return 0;
+}
+
+function toPercent(score) { return ((score / 5) * 100).toFixed(1); }
+
+// ── Styles ──
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --bg-primary: #0B1120;
-  --bg-card: #131B2E;
-  --bg-input: #0E1628;
-  --border: #1E2D4A;
-  --accent: #3B6BDB;
-  --accent-light: #5B8AEF;
-  --accent-glow: rgba(59,107,219,0.15);
-  --text-primary: #E8ECF4;
-  --text-secondary: #8899B4;
-  --text-muted: #5A6B85;
-  --gold: #D4A853;
-  --gold-light: #E8C97A;
-  --green: #34C77B;
-  --orange: #E8913A;
-  --red: #E05252;
-  --radius: 12px;
-  --radius-sm: 8px;
-}
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  margin: 0;
-}
-
-.app-container { max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
-
-.app-header {
-  padding: 48px 0 32px; text-align: center; position: relative; overflow: hidden;
-}
-.app-header::before {
-  content: ''; position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); pointer-events: none;
-}
-.logo-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 100px; padding: 6px 16px 6px 8px;
-  font-size: 12px; font-weight: 600; color: var(--gold);
-  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;
-}
-.logo-badge .dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; }
-.app-header h1 {
-  font-family: 'DM Serif Display', serif; font-size: clamp(28px, 5vw, 44px);
-  font-weight: 400; line-height: 1.15; margin-bottom: 12px; position: relative;
-}
-.app-header h1 span { color: var(--gold); }
-.app-header .subtitle {
-  color: var(--text-secondary); font-size: clamp(14px, 2.5vw, 16px);
-  max-width: 640px; margin: 0 auto;
-}
-
-.stepper { display: flex; align-items: center; justify-content: center; margin: 32px auto 36px; max-width: 680px; padding: 0 8px; }
-.step-item { display: flex; align-items: center; flex: 1; }
-.step-circle {
-  width: 36px; height: 36px; min-width: 36px; border-radius: 50%;
-  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: var(--text-muted);
-  background: var(--bg-card); transition: all 0.3s; position: relative; z-index: 1;
-}
-.step-circle.active { border-color: var(--accent); color: #fff; background: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
-.step-circle.done { border-color: var(--green); color: #fff; background: var(--green); }
-.step-line { flex: 1; height: 2px; background: var(--border); transition: background 0.3s; }
-.step-line.done { background: var(--green); }
-
-.card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 28px; margin-bottom: 20px;
-  animation: fadeUp 0.4s ease;
-}
-@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-
-.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
-.card-icon {
-  width: 42px; height: 42px; min-width: 42px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; font-size: 20px;
-}
-.card-header h2 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; line-height: 1.3; }
-.card-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-
-.factor-row {
-  padding: 20px 0; border-bottom: 1px solid var(--border);
-  display: flex; flex-direction: column; align-items: center; text-align: center;
-}
-.factor-row:last-child { border-bottom: none; }
-.factor-desc { font-size: 14px; color: var(--text-primary); margin-bottom: 14px; line-height: 1.5; max-width: 480px; }
-.rating-group { display: flex; gap: 6px; justify-content: center; }
-.rating-btn {
-  width: 52px; padding: 10px 0;
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  background: var(--bg-input); color: var(--text-secondary);
-  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
-  text-align: center; -webkit-tap-highlight-color: transparent; font-family: 'DM Sans', sans-serif;
-}
-.rating-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-.rating-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 12px rgba(59,107,219,0.3); }
-.rating-labels {
-  display: flex; justify-content: space-between; font-size: 11px;
-  color: var(--text-muted); margin-top: 8px; width: 284px;
-}
-
-.btn-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
-.btn {
-  padding: 14px 28px; border-radius: var(--radius-sm);
-  font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-  cursor: pointer; border: none; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
-}
-.btn-primary { background: var(--accent); color: #fff; flex: 1; }
-.btn-primary:hover { background: var(--accent-light); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
-.btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
-.btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0B1120; flex: 1; }
-.btn-gold:hover { opacity: 0.9; }
-.btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.score-hero { text-align: center; padding: 40px 20px; }
-.score-big { font-family: 'DM Serif Display', serif; font-size: 72px; line-height: 1; color: var(--gold); margin-bottom: 8px; }
-.score-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 4px; }
-.score-level { display: inline-block; padding: 4px 14px; border-radius: 100px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; margin-top: 8px; color: #fff; }
-.benchmark-bar { position: relative; height: 8px; background: var(--bg-input); border-radius: 100px; margin: 20px 0 8px; overflow: visible; }
-.benchmark-fill { height: 100%; border-radius: 100px; transition: width 1s ease; background: var(--gold); }
-.benchmark-marker { position: absolute; top: -6px; width: 2px; height: 20px; background: var(--text-muted); border-radius: 1px; }
-.benchmark-marker-label { position: absolute; top: 18px; transform: translateX(-50%); font-size: 10px; color: var(--text-muted); white-space: nowrap; }
-.bar-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 16px; }
-
-.component-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
-.component-row:last-child { border-bottom: none; }
-.comp-name { flex: 1; font-size: 13px; font-weight: 500; }
-.comp-score { font-size: 14px; font-weight: 700; min-width: 40px; text-align: right; }
-.comp-bar-wrap { width: 120px; min-width: 80px; height: 6px; background: var(--bg-input); border-radius: 100px; overflow: hidden; }
-.comp-bar-fill { height: 100%; border-radius: 100px; transition: width 1s ease; }
-
-.chart-wrap { position: relative; max-width: 420px; margin: 0 auto; padding: 20px 0; }
-
-.dist-comp-section { margin-bottom: 8px; }
-.dist-comp-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 16px; margin-top: 12px;
-  background: var(--bg-input); border-radius: var(--radius-sm);
-  border-left: 3px solid;
-}
-.dist-comp-header h3 { font-family: 'DM Serif Display', serif; font-size: 16px; font-weight: 400; flex: 1; }
-.dist-comp-header .comp-avg { font-size: 13px; font-weight: 600; }
-.dist-factor { padding: 14px 0 14px 16px; border-bottom: 1px solid var(--border); }
-.dist-factor:last-child { border-bottom: none; }
-.dist-factor-desc { font-size: 13px; color: var(--text-primary); margin-bottom: 6px; line-height: 1.4; }
-.dist-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-.dist-scores { font-size: 12px; font-weight: 600; white-space: nowrap; }
-.dist-bar-wrap { display: flex; height: 22px; border-radius: 4px; overflow: hidden; position: relative; }
-.dist-segment { transition: width 0.6s ease; position: relative; min-width: 0; }
-.dist-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.85); pointer-events: none; }
-.dist-marker {
-  position: absolute; top: -4px; width: 3px; height: 30px;
-  background: #fff; border-radius: 2px; z-index: 2;
-  box-shadow: 0 0 8px rgba(255,255,255,0.6); transition: left 0.6s ease;
-}
-.dist-legend {
-  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; margin-bottom: 4px; justify-content: center;
-}
-.dist-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
-.dist-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
-
-.ai-box {
-  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 20px; min-height: 100px;
-  font-size: 14px; line-height: 1.7; color: var(--text-secondary);
-}
-.ai-box h4 { color: var(--text-primary); margin: 16px 0 6px; font-size: 14px; }
-.ai-box h4:first-child { margin-top: 0; }
-.ai-box ul { padding-left: 18px; margin: 8px 0; }
-.ai-box li { margin-bottom: 4px; }
-.ai-loading { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 14px; }
-.spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-footer {
-  text-align: center; padding: 40px 20px; font-size: 12px; color: var(--text-muted);
-  border-top: 1px solid var(--border); margin-top: 48px;
-}
-
-@media (max-width: 640px) {
-  .app-header { padding: 32px 0 20px; }
-  .card { padding: 20px 16px; }
-  .rating-btn { width: 48px; padding: 10px 0; font-size: 14px; }
-  .rating-labels { width: 262px; }
-  .comp-bar-wrap { width: 80px; min-width: 60px; }
-  .score-big { font-size: 56px; }
-  .btn { padding: 14px 20px; font-size: 14px; }
-  .step-circle { width: 30px; height: 30px; min-width: 30px; font-size: 12px; }
-  .dist-scores { width: 100%; margin-top: 2px; }
-  .dist-pct { font-size: 8px; }
-  .dist-factor { padding-left: 8px; }
-  .dist-comp-header { padding: 12px; }
-}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0B1120;--card:#131B2E;--input:#0E1628;--border:#1E2D4A;--accent:#3B6BDB;--accent-l:#5B8AEF;--glow:rgba(59,107,219,0.15);--t1:#E8ECF4;--t2:#8899B4;--t3:#5A6B85;--gold:#D4A853;--gold-l:#E8C97A;--green:#34C77B;--orange:#E8913A;--red:#E05252;--r:12px;--rs:8px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;-webkit-font-smoothing:antialiased;margin:0}
+.app{max-width:960px;margin:0 auto;padding:0 20px 60px}
+.hdr{padding:48px 0 32px;text-align:center;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--glow) 0%,transparent 70%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 16px 6px 8px;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px}
+.badge .dot{width:8px;height:8px;background:var(--gold);border-radius:50%}
+.hdr h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,44px);font-weight:400;line-height:1.15;margin-bottom:12px;position:relative}
+.hdr h1 span{color:var(--gold)}
+.hdr .sub{color:var(--t2);font-size:clamp(14px,2.5vw,16px);max-width:640px;margin:0 auto}
+.stepper{display:flex;align-items:center;justify-content:center;margin:32px auto 36px;max-width:680px;padding:0 8px}
+.step-item{display:flex;align-items:center;flex:1}
+.sc{width:36px;height:36px;min-width:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--t3);background:var(--card);transition:all .3s;position:relative;z-index:1}
+.sc.active{border-color:var(--accent);color:#fff;background:var(--accent);box-shadow:0 0 20px var(--glow)}
+.sc.done{border-color:var(--green);color:#fff;background:var(--green)}
+.sl{flex:1;height:2px;background:var(--border);transition:background .3s}.sl.done{background:var(--green)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-bottom:20px;animation:fu .4s ease}
+@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ch{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+.ci{width:42px;height:42px;min-width:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.ch h2{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;line-height:1.3}
+.ch p{font-size:13px;color:var(--t2);margin-top:4px}
+.fr{padding:20px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;text-align:center}
+.fr:last-child{border-bottom:none}
+.fd{font-size:14px;color:var(--t1);margin-bottom:14px;line-height:1.5;max-width:480px}
+.rg{display:flex;gap:6px;justify-content:center}
+.rb{width:52px;padding:10px 0;border:1px solid var(--border);border-radius:var(--rs);background:var(--input);color:var(--t2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;font-family:'DM Sans',sans-serif}
+.rb:hover{border-color:var(--accent);color:var(--t1)}
+.rb.sel{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(59,107,219,0.3)}
+.rl{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:8px;width:284px}
+.br{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{padding:14px 28px;border-radius:var(--rs);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s}
+.btn-p{background:var(--accent);color:#fff;flex:1}.btn-p:hover{background:var(--accent-l)}.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-s{background:transparent;border:1px solid var(--border);color:var(--t2)}.btn-s:hover{border-color:var(--t2);color:var(--t1)}
+.btn-g{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#0B1120;flex:1}.btn-g:hover{opacity:.9}.btn-g:disabled{opacity:.4;cursor:not-allowed}
+.hero{text-align:center;padding:40px 20px}
+.big-pct{font-family:'DM Serif Display',serif;font-size:80px;line-height:1;color:var(--gold);margin-bottom:4px}
+.big-raw{font-size:16px;color:var(--t3);font-weight:500;margin-bottom:8px}
+.slbl{font-size:14px;color:var(--t2);margin-bottom:4px}
+.lvl{display:inline-block;padding:4px 14px;border-radius:100px;font-size:13px;font-weight:700;letter-spacing:.5px;margin-top:8px;color:#fff}
+.pctl{margin-top:20px;padding:20px;background:var(--input);border-radius:var(--rs);text-align:center}
+.pctl-num{font-family:'DM Serif Display',serif;font-size:42px;color:var(--accent-l)}
+.pctl-lbl{font-size:13px;color:var(--t2);margin-top:4px}
+.bbar{position:relative;height:8px;background:var(--input);border-radius:100px;margin:20px 0 8px;overflow:visible}
+.bfill{height:100%;border-radius:100px;transition:width 1s ease;background:var(--gold)}
+.bmk{position:absolute;top:-6px;width:2px;height:20px;background:var(--t3);border-radius:1px}
+.bmkl{position:absolute;top:18px;transform:translateX(-50%);font-size:10px;color:var(--t3);white-space:nowrap}
+.bleg{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:16px}
+.cr{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.cr:last-child{border-bottom:none}
+.seg-sel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.seg-btn{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.seg-btn:hover{border-color:var(--t2);color:var(--t1)}
+.seg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg-grp{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.seg-tag{padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.seg-tag:hover{border-color:var(--gold);color:var(--gold)}
+.seg-tag.active{background:rgba(212,168,83,0.15);border-color:var(--gold);color:var(--gold)}
+.hist-outer{position:relative;padding:0 0 28px}
+.hist-wrap{display:flex;align-items:flex-end;gap:2px;height:120px;padding:0;margin-left:32px}
+.hist-bar{flex:1;border-radius:3px 3px 0 0;transition:height .6s ease;position:relative;min-width:0;background:var(--accent)}
+.hist-bar-you{background:var(--gold) !important}
+.hist-pct{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--t3);white-space:nowrap}
+.hist-x{display:flex;margin-left:32px;font-size:9px;color:var(--t3);margin-top:4px}
+.hist-x span{flex:1;text-align:center}
+.hist-y{position:absolute;left:0;top:0;bottom:28px;width:28px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:4px;font-size:9px;color:var(--t3)}
+.hist-marker{position:absolute;bottom:0;width:2px;background:var(--gold);border-radius:1px;z-index:2;transition:left .6s,height .6s}
+.hist-arrow{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--gold);white-space:nowrap;display:flex;flex-direction:column;align-items:center}
+.hist-arrow::after{content:'';width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--gold);margin-top:2px}
+.method-box{background:var(--input);border:1px solid var(--border);border-radius:var(--rs);padding:20px;font-size:13px;line-height:1.7;color:var(--t2)}
+.method-box h4{color:var(--t1);font-size:13px;font-weight:600;margin:14px 0 4px}.method-box h4:first-child{margin-top:0}
+.ai-box{background:var(--input);border:1px solid var(--border);border-radius:var(--rs);padding:20px;min-height:100px;font-size:14px;line-height:1.7;color:var(--t2)}
+.ai-box h4{color:var(--t1);margin:16px 0 6px;font-size:14px}.ai-box h4:first-child{margin-top:0}
+.ai-box ul{padding-left:18px;margin:8px 0}.ai-box li{margin-bottom:4px}
+.ai-ld{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:14px}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{text-align:center;padding:40px 20px;font-size:12px;color:var(--t3);border-top:1px solid var(--border);margin-top:48px}
+@media(max-width:640px){.hdr{padding:32px 0 20px}.card{padding:20px 16px}.rb{width:48px}.rl{width:262px}.big-pct{font-size:56px}.btn{padding:14px 20px;font-size:14px}.sc{width:30px;height:30px;min-width:30px;font-size:12px}.pctl-num{font-size:32px}.hist-wrap{height:80px}}
 `;
 
-// ─── Sub-components ───
+// ── Sub-components ──
 
 function Stepper({ current }) {
-  const steps = [0, 1, 2, 3, 4, 5];
+  const steps = [0,1,2,3,4,5];
   return (
     <div className="stepper">
-      {steps.map((s, i) => (
-        <div className="step-item" key={s} style={i === steps.length - 1 ? { flex: 0 } : {}}>
-          <div className={`step-circle ${s < current ? "done" : s === current ? "active" : ""}`}>
-            {s < current ? "\u2713" : s === 5 ? "\u2713" : s + 1}
+      {steps.map((s,i) => (
+        <div className="step-item" key={s} style={i===steps.length-1?{flex:0}:{}}>
+          <div className={`sc ${s<current?"done":s===current?"active":""}`}>
+            {s<current?"\u2713":s===5?"\u2713":s+1}
           </div>
-          {i < steps.length - 1 && <div className={`step-line ${s < current ? "done" : ""}`} />}
+          {i<steps.length-1&&<div className={`sl ${s<current?"done":""}`}/>}
         </div>
       ))}
     </div>
   );
 }
 
-function FactorRow({ factor, rating, onRate }) {
-  return (
-    <div className="factor-row">
-      <div className="factor-desc">{factor.desc}</div>
-      <div className="rating-group">
-        {[1, 2, 3, 4, 5].map((v) => (
-          <button key={v} className={`rating-btn ${rating === v ? "selected" : ""}`} onClick={() => onRate(factor.code, v)}>{v}</button>
-        ))}
-      </div>
-      <div className="rating-labels"><span>Very Low</span><span>Very High</span></div>
-    </div>
-  );
-}
-
-function ComponentCard({ comp, ratings, onRate }) {
+function ComponentCard({ compKey, compIdx, ratings, onRate }) {
+  const comp = B.components[compKey];
+  const factors = Object.entries(comp.factors);
   return (
     <div className="card">
-      <div className="card-header">
-        <div className="card-icon" style={{ background: comp.theme.bg, color: comp.theme.color }}>{comp.icon}</div>
+      <div className="ch">
+        <div className="ci" style={{background:COMP_BG_MAP[compKey],color:COMP_COLORS_MAP[compKey]}}>{COMP_ICONS_MAP[compKey]}</div>
         <div>
           <h2>{comp.name}</h2>
           <p>Rate each factor from 1 (Very Low) to 5 (Very High)</p>
         </div>
       </div>
-      {comp.factors.map((f) => (
-        <FactorRow key={f.code} factor={f} rating={ratings[f.code] || 0} onRate={onRate} />
+      {factors.map(([code, f]) => (
+        <div className="fr" key={code}>
+          <div className="fd">{f.desc}</div>
+          <div className="rg">
+            {[1,2,3,4,5].map(v => (
+              <button key={v} className={`rb ${ratings[code]===v?"sel":""}`} onClick={()=>onRate(code,v)}>{v}</button>
+            ))}
+          </div>
+          <div className="rl"><span>Very Low</span><span>Very High</span></div>
+        </div>
       ))}
     </div>
   );
 }
 
-function RadarChart({ compScores }) {
-  const canvasRef = useRef(null);
-  const chartRef = useRef(null);
+function IndexHistogram({ userScore }) {
+  const allBins = [];
+  for (let s = 1.0; s < 5.0; s += 0.25) {
+    const match = B.eiHistogram.find(b => Math.abs(b.binStart - s) < 0.01);
+    allBins.push({ binStart: s, binEnd: s + 0.25, count: match ? match.count : 0, pct: match ? match.pct : 0 });
+  }
+  const maxPct = Math.max(...allBins.map(b => b.pct), 1);
+  const niceMax = Math.ceil(maxPct / 10) * 10;
+  const yTicks = [];
+  for (let t = niceMax; t >= 0; t -= 10) yTicks.push(t);
 
-  useEffect(() => {
-    const loadChart = () => {
-      if (!canvasRef.current || typeof Chart === "undefined") return;
-      if (chartRef.current) chartRef.current.destroy();
+  const userFrac = (userScore - 1.0) / 4.0;
+  const userBinIdx = allBins.findIndex(b => userScore >= b.binStart && userScore < b.binEnd);
 
-      const labels = COMPONENT_KEYS.map((k) => KMIC_DATA[k].shortName);
-      const userData = COMPONENT_KEYS.map((k) => compScores[k]);
-      const benchData = COMPONENT_KEYS.map((k) => KMIC_DATA[k].benchmarkIndex);
-
-      const valueLabelsPlugin = {
-        id: "radarValueLabels",
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((dataset, dsIndex) => {
-            const meta = chart.getDatasetMeta(dsIndex);
-            meta.data.forEach((point, idx) => {
-              const val = dataset.data[idx];
-              ctx.save();
-              ctx.font = "bold 11px DM Sans, sans-serif";
-              ctx.fillStyle = dsIndex === 0 ? "#D4A853" : "#5B8AEF";
-              ctx.textAlign = "center";
-              ctx.fillText(val.toFixed(2), point.x, point.y + (dsIndex === 0 ? -10 : 16));
-              ctx.restore();
-            });
-          });
-        },
-      };
-
-      chartRef.current = new Chart(canvasRef.current, {
-        type: "radar",
-        data: {
-          labels,
-          datasets: [
-            { label: "Your Organization", data: userData, borderColor: "#D4A853", backgroundColor: "rgba(212,168,83,0.15)", borderWidth: 2, pointBackgroundColor: "#D4A853", pointRadius: 5 },
-            { label: "Survey Average (n=220)", data: benchData, borderColor: "#5B8AEF", backgroundColor: "rgba(91,138,239,0.08)", borderWidth: 2, borderDash: [5, 5], pointBackgroundColor: "#5B8AEF", pointRadius: 4 },
-          ],
-        },
-        options: {
-          responsive: true,
-          layout: { padding: { top: 20, bottom: 20, left: 12, right: 12 } },
-          scales: {
-            r: {
-              beginAtZero: true, max: 5,
-              ticks: { stepSize: 1, color: "#5A6B85", backdropColor: "transparent", font: { size: 10 } },
-              grid: { color: "#1E2D4A" }, angleLines: { color: "#1E2D4A" },
-              pointLabels: { color: "#8899B4", font: { size: 12, family: "DM Sans", weight: "500" }, padding: 24 },
-            },
-          },
-          plugins: {
-            legend: { labels: { color: "#8899B4", font: { size: 12, family: "DM Sans" }, padding: 20, usePointStyle: true, pointStyle: "circle" } },
-            tooltip: { enabled: false },
-          },
-        },
-        plugins: [valueLabelsPlugin],
-      });
-    };
-
-    if (typeof Chart !== "undefined") loadChart();
-    else {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js";
-      script.onload = loadChart;
-      document.head.appendChild(script);
-    }
-    return () => { if (chartRef.current) chartRef.current.destroy(); };
-  }, [compScores]);
-
-  return <div className="chart-wrap"><canvas ref={canvasRef} /></div>;
-}
-
-function DistributionBenchmark({ ratings }) {
   return (
-    <div>
-      <div className="dist-legend">
-        {DIST_LABELS.map((label, i) => (
-          <div className="dist-legend-item" key={label}>
-            <div className="dist-legend-dot" style={{ background: DIST_COLORS[i] }} />{label}
+    <div className="hist-outer">
+      <div className="hist-y">
+        {yTicks.map(t => <span key={t}>{t}%</span>)}
+      </div>
+      <div className="hist-wrap" style={{position:"relative"}}>
+        {allBins.map((b, i) => (
+          <div key={i} className={`hist-bar ${i===userBinIdx?"hist-bar-you":""}`}
+            style={{height: b.pct > 0 ? `${Math.max((b.pct/niceMax)*100, 2)}%` : "0%"}}
+          >
+            {b.pct >= 4 && <div className="hist-pct">{b.pct}%</div>}
           </div>
         ))}
-        <div className="dist-legend-item">
-          <div style={{ width: 3, height: 14, background: "#fff", borderRadius: 2 }} />Your rating
+        <div className="hist-marker" style={{left:`${userFrac*100}%`,height:"calc(100% + 4px)"}}>
+          <div className="hist-arrow">You</div>
         </div>
       </div>
-      {COMPONENT_KEYS.map((cKey) => {
-        const comp = KMIC_DATA[cKey];
-        let userCompAvg = 0;
-        comp.factors.forEach((f) => { userCompAvg += (ratings[f.code] || 0); });
-        userCompAvg = userCompAvg / comp.factors.length;
-
-        return (
-          <div className="dist-comp-section" key={cKey}>
-            <div className="dist-comp-header" style={{ borderLeftColor: comp.theme.color }}>
-              <h3>{comp.name}</h3>
-              <div className="comp-avg">
-                <span style={{ color: "var(--gold)" }}>{userCompAvg.toFixed(1)}</span>
-                <span style={{ color: "var(--text-muted)", margin: "0 4px" }}>vs</span>
-                <span style={{ color: "var(--accent-light)" }}>{comp.benchmarkIndex.toFixed(1)}</span>
-              </div>
-            </div>
-            {comp.factors.map((f) => {
-              const userRating = ratings[f.code] || 0;
-              const delta = userRating - f.surveyMean;
-              const deltaColor = delta > 0.3 ? "var(--green)" : delta < -0.3 ? "var(--red)" : "var(--text-muted)";
-              const deltaSign = delta > 0 ? "+" : "";
-              let markerLeft = 0;
-              if (userRating > 0) {
-                for (let i = 0; i < userRating - 1; i++) markerLeft += f.dist[i];
-                markerLeft += f.dist[userRating - 1] / 2;
-              }
-              return (
-                <div className="dist-factor" key={f.code}>
-                  <div className="dist-factor-desc">{f.desc}</div>
-                  <div className="dist-meta">
-                    <span className="dist-scores">
-                      You: <span style={{ color: "var(--gold)" }}>{userRating}</span>
-                      <span style={{ color: "var(--text-muted)", margin: "0 4px" }}>/</span>
-                      Survey avg: <span style={{ color: "var(--accent-light)" }}>{f.surveyMean.toFixed(1)}</span>
-                      <span style={{ color: deltaColor, marginLeft: 6 }}>({deltaSign}{delta.toFixed(1)})</span>
-                    </span>
-                  </div>
-                  <div className="dist-bar-wrap">
-                    {f.dist.map((pct, i) => (
-                      <div key={i} className="dist-segment" style={{ width: `${pct}%`, background: DIST_COLORS[i], opacity: userRating === i + 1 ? 1 : 0.35 }}>
-                        {pct >= 8 && <div className="dist-pct">{pct.toFixed(0)}%</div>}
-                      </div>
-                    ))}
-                    {userRating > 0 && <div className="dist-marker" style={{ left: `${markerLeft}%` }} />}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
+      <div className="hist-x">
+        {[1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0].map(v => (
+          <span key={v} style={{flex: v===5.0 ? 0 : 1, minWidth: v===5.0 ? 20 : 0}}>{v.toFixed(1)}</span>
+        ))}
+      </div>
     </div>
   );
 }
 
-// ─── AI Recommendations (calls /api/recommend on same domain) ───
+
+
+function SegmentComparison({ compScores, userScore }) {
+  const [segType, setSegType] = useState("all");
+  const [segGroup, setSegGroup] = useState(null);
+  const [hovered, setHovered] = useState(null);
+
+  const segOptions = {
+    firmType: { label: "Firm Type", groups: Object.keys(B.segmented.firmType) },
+    firmSize: { label: "Firm Size", groups: Object.keys(B.segmented.firmSize) },
+  };
+
+  let peerLabel = "All Firms";
+  let peerN = B.overall.n;
+  let peerComponents = {};
+  COMP_KEYS.forEach(k => { peerComponents[k] = { importantIndex: B.components[k].importantIndex }; });
+
+  if (segType !== "all" && segGroup && B.segmented[segType]?.[segGroup]) {
+    const sd = B.segmented[segType][segGroup];
+    peerLabel = segGroup;
+    peerN = sd.n;
+    peerComponents = sd.components;
+  }
+
+  // FIX 1: Radar center shifted down from 210 to 260 for top label clearance
+  const cx = 220, cy = 260, maxR = 150;
+  const n = COMP_RANKED.length;
+
+  function valToR(val) { return ((Math.max(1, Math.min(5, val)) - 1) / 4) * maxR; }
+  function angleFor(i) { return (Math.PI * 2 * i) / n - Math.PI / 2; }
+  function ptAt(i, val) {
+    const r = valToR(val);
+    const a = angleFor(i);
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  }
+  function polyPoints(values) {
+    return values.map((v, i) => { const p = ptAt(i, v); return `${p.x},${p.y}`; }).join(" ");
+  }
+
+  const userVals = COMP_RANKED.map(k => compScores[k]);
+  const peerVals = COMP_RANKED.map(k => peerComponents[k].importantIndex);
+  const gridLevels = [1, 2, 3, 4, 5];
+
+  const fullNames = {
+    C1: "Mutual Trust &\nCollaboration",
+    C2: "Organizational\nValues & Norms",
+    C3: "Information &\nComm Systems",
+    C4: "Organizational\nPolicies",
+    C5: "Employee\nEmpowerment",
+  };
+
+  return (
+    <div className="card">
+      <div className="ch"><div><h2>KMIC Profile & Peer Comparison</h2><p>Your organization's profile compared against peer groups</p></div></div>
+
+      {/* Segment selector */}
+      <div style={{display:"flex",gap:0,marginBottom:16,background:"var(--input)",borderRadius:8,padding:3,border:"1px solid var(--border)"}}>
+        <button
+          onClick={() => { setSegType("all"); setSegGroup(null); }}
+          style={{
+            flex:1,padding:"10px 12px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,
+            fontFamily:"DM Sans,sans-serif",cursor:"pointer",transition:"all .2s",
+            background: segType==="all" ? "var(--accent)" : "transparent",
+            color: segType==="all" ? "#fff" : "var(--t2)",
+          }}>
+          All Firms (n={B.overall.n})
+        </button>
+        {Object.entries(segOptions).map(([key, opt]) => (
+          <button key={key}
+            onClick={() => { setSegType(key); setSegGroup(null); }}
+            style={{
+              flex:1,padding:"10px 12px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,
+              fontFamily:"DM Sans,sans-serif",cursor:"pointer",transition:"all .2s",
+              background: segType===key ? "var(--accent)" : "transparent",
+              color: segType===key ? "#fff" : "var(--t2)",
+            }}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Subgroup pills */}
+      {segType !== "all" && (
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16,justifyContent:"center"}}>
+          {segOptions[segType].groups.map(g => {
+            const isActive = segGroup === g;
+            const gn = B.segmented[segType][g].n;
+            return (
+              <button key={g}
+                onClick={() => setSegGroup(isActive ? null : g)}
+                style={{
+                  padding:"8px 18px",borderRadius:100,border: isActive ? "1px solid var(--gold)" : "1px solid var(--border)",
+                  background: isActive ? "rgba(212,168,83,0.15)" : "transparent",
+                  color: isActive ? "var(--gold)" : "var(--t2)",
+                  fontSize:13,fontWeight:600,fontFamily:"DM Sans,sans-serif",cursor:"pointer",transition:"all .2s",
+                }}>
+                {g} <span style={{opacity:0.6,fontWeight:400}}>(n={gn})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {segType !== "all" && !segGroup && (
+        <p style={{color:"var(--t3)",fontSize:12,textAlign:"center",marginBottom:12}}>Select a group above, or viewing all firms by default</p>
+      )}
+
+      {/* FIX 3: increased marginTop from 8 to 24 for extra spacing below pills */}
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:24}}>
+        {/* FIX 2: viewBox expanded from 430 to 540 to contain shifted labels */}
+        <svg viewBox="-80 0 600 540" style={{width:"100%",maxWidth:560}}>
+          <defs>
+            <filter id="glow-g"><feGaussianBlur stdDeviation="4" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+
+          {/* Grid rings */}
+          {gridLevels.map(lv => {
+            const r = valToR(lv);
+            const pts = Array.from({length: n}, (_, i) => {
+              const a = angleFor(i);
+              return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+            }).join(" ");
+            return (
+              <g key={lv}>
+                <polygon points={pts} fill="none" stroke="#1E2D4A" strokeWidth="1"/>
+                <text x={cx} y={cy - r - 4} fill="#5A6B85" fontSize="9" textAnchor="middle">{lv}</text>
+              </g>
+            );
+          })}
+
+          {/* Axis lines */}
+          {COMP_RANKED.map((_, i) => {
+            const outerPt = ptAt(i, 5);
+            return <line key={i} x1={cx} y1={cy} x2={outerPt.x} y2={outerPt.y} stroke="#1E2D4A" strokeWidth="1"/>;
+          })}
+
+          {/* Gap fill */}
+          {(() => {
+            const segments = [];
+            for (let i = 0; i < n; i++) {
+              const next = (i + 1) % n;
+              const uP1 = ptAt(i, userVals[i]);
+              const uP2 = ptAt(next, userVals[next]);
+              const pP1 = ptAt(i, peerVals[i]);
+              const pP2 = ptAt(next, peerVals[next]);
+              const avgAbove = (userVals[i] + userVals[next]) / 2 >= (peerVals[i] + peerVals[next]) / 2;
+              segments.push(
+                <polygon key={i}
+                  points={`${uP1.x},${uP1.y} ${uP2.x},${uP2.y} ${pP2.x},${pP2.y} ${pP1.x},${pP1.y}`}
+                  fill={avgAbove ? "rgba(52,199,123,0.18)" : "rgba(224,82,82,0.18)"}
+                  stroke="none"/>
+              );
+            }
+            return segments;
+          })()}
+
+          {/* Peer polygon */}
+          <polygon points={polyPoints(peerVals)}
+            fill="rgba(91,138,239,0.06)" stroke="#5B8AEF" strokeWidth="2"
+            strokeDasharray="6 4" opacity="0.9"/>
+
+          {/* User polygon */}
+          <polygon points={polyPoints(userVals)}
+            fill="rgba(212,168,83,0.1)" stroke="#D4A853" strokeWidth="2.5"
+            filter="url(#glow-g)"/>
+
+          {/* Data points and labels */}
+          {COMP_RANKED.map((cKey, i) => {
+            const comp = B.components[cKey];
+            const uPt = ptAt(i, userVals[i]);
+            const pPt = ptAt(i, peerVals[i]);
+            const isH = hovered === cKey;
+            const delta = userVals[i] - peerVals[i];
+            const deltaPct = (delta / 4) * 100;
+
+            const a = angleFor(i);
+            const labelR = maxR + 48;
+            const lx = cx + labelR * Math.cos(a);
+            const ly = cy + labelR * Math.sin(a);
+            const anchor = Math.abs(Math.cos(a)) < 0.15 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
+            const lyOffset = Math.abs(Math.sin(a)) > 0.8 ? (Math.sin(a) > 0 ? 10 : -10) : 0;
+
+            const nameLines = fullNames[cKey].split("\n");
+
+            return (
+              <g key={cKey}
+                onMouseEnter={() => setHovered(cKey)}
+                onMouseLeave={() => setHovered(null)}
+                style={{cursor:"default"}}>
+                <circle cx={pPt.x} cy={pPt.y} r={isH ? 6 : 4} fill="#5B8AEF" stroke="var(--bg)" strokeWidth="2"/>
+                <circle cx={uPt.x} cy={uPt.y} r={isH ? 7 : 5} fill="#D4A853" stroke="var(--bg)" strokeWidth="2"/>
+
+                {nameLines.map((line, li) => (
+                  <text key={li} x={lx} y={ly - 20 + lyOffset + li * 14} fill={isH ? "#E8ECF4" : "#8899B4"}
+                    fontSize={isH ? "12" : "11"} fontWeight={isH ? "700" : "500"}
+                    textAnchor={anchor} dominantBaseline="central">
+                    {line}
+                  </text>
+                ))}
+                <text x={lx} y={ly + (nameLines.length - 1) * 14 - 2 + lyOffset} fill="#D4A853"
+                  fontSize="11" fontWeight="700"
+                  textAnchor={anchor} dominantBaseline="central">
+                  You: {userVals[i].toFixed(2)}
+                </text>
+                <text x={lx} y={ly + (nameLines.length - 1) * 14 + 14 + lyOffset}
+                  fill={delta > 0 ? "#34C77B" : delta < 0 ? "#E05252" : "#5A6B85"}
+                  fontSize="10" fontWeight="600"
+                  textAnchor={anchor} dominantBaseline="central">
+                  {Math.abs(deltaPct).toFixed(0)}% {delta >= 0 ? "higher" : "lower"} than peers
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Center info */}
+          <text x={cx} y={cy - 10} fill="#E8ECF4" fontSize="13" fontWeight="600" textAnchor="middle">{peerLabel}</text>
+          <text x={cx} y={cy + 8} fill="#8899B4" fontSize="11" textAnchor="middle">n = {peerN}</text>
+        </svg>
+
+        {/* Legend */}
+        <div style={{display:"flex",gap:24,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#D4A853" strokeWidth="2.5"/></svg>
+            Your organization
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#5B8AEF" strokeWidth="2" strokeDasharray="4 3"/></svg>
+            Peer benchmark
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AIRecommendations({ ratings }) {
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const generateAI = async () => {
-    setLoading(true);
-    setOutput(null);
-    setError(null);
-
-    let scoreSummary = "";
-    COMPONENT_KEYS.forEach((cKey) => {
-      const comp = KMIC_DATA[cKey];
-      let compScore = 0;
-      comp.factors.forEach((f) => {
-        const r = ratings[f.code] || 0;
-        compScore += (f.ow / comp.groupWeight) * r;
-        scoreSummary += `  "${f.desc}": rated ${r}/5 (survey avg: ${f.surveyMean})\n`;
+  const generate = async () => {
+    setLoading(true); setOutput(null); setError(null);
+    let summary = "";
+    COMP_KEYS.forEach(cKey => {
+      const comp = B.components[cKey];
+      let cs = 0;
+      Object.entries(comp.factors).forEach(([code, f]) => {
+        const r = ratings[code]||0;
+        cs += (f.ow / comp.groupWeight) * r;
+        summary += `  "${f.desc}": rated ${r}/5 (survey avg: ${f.mean})\n`;
       });
-      scoreSummary += `  => ${comp.name} score: ${compScore.toFixed(3)} (benchmark: ${comp.benchmarkIndex})\n\n`;
+      summary += `  => ${comp.name} score: ${cs.toFixed(3)} (benchmark: ${comp.importantIndex})\n\n`;
     });
+    let total = 0;
+    Object.keys(B.overallWeights).forEach(f => { total += B.overallWeights[f] * (ratings[f]||0); });
 
-    let eiTotal = 0;
-    COMPONENT_KEYS.forEach((cKey) => {
-      KMIC_DATA[cKey].factors.forEach((f) => { eiTotal += f.ow * (ratings[f.code] || 0); });
-    });
-
-    const prompt = `You are a senior Knowledge Management consultant advising an A/E/C (Architecture, Engineering, Construction) organization in a developing country. Your recommendations must be specific, actionable, and grounded in published research.
+    const prompt = `You are a senior Knowledge Management consultant advising an A/E/C organization in a developing country. Your recommendations must be specific, actionable, and grounded in published research.
 
 CONTEXT:
-This organization completed a KMIC assessment based on a validated model surveying 220 A/E/C practitioners. Their overall Enabling Index is ${eiTotal.toFixed(3)} out of 5.0 (industry benchmark: 3.767).
+This organization completed a KMIC assessment based on a validated model surveying ${B.overall.n} A/E/C practitioners. Their overall KMIC Index is ${total.toFixed(3)} out of 5.0 (industry benchmark: ${B.overall.index}).
 
 SCORES BY COMPONENT:
-${scoreSummary}
-
-RESEARCH CONTEXT (use these findings to inform your advice):
-- Organizational culture (values, norms, knowledge-sharing mindset) is the single strongest driver of KM effectiveness in construction firms (Gold et al., 2001; Lee and Choi, 2003; Donate and de Pablo, 2015). Interventions here yield the highest returns.
-- Employee empowerment is the weakest area across A/E/C firms in developing countries (mean 2.977-3.268), largely due to high power distance and centralized hierarchies (Hofstede, 2011; Dang et al., 2020). Empowerment directly enables knowledge creation and initiative (Zhang and Bartol, 2010).
-- Clear, written organizational policies that align operations and communications are critical for institutionalizing KM in project-based environments where teams are temporary (Ozorhon et al., 2014; Dang et al., 2018).
-- Trust-building across organizational silos is essential but challenging in the fragmented, competitive A/E/C project environment (Zaheer et al., 1998; Dulaimi et al., 2003).
-- Technology investments in information systems yield limited returns without supportive culture, policies, trust, and empowered users first (Dang et al., 2018; Chang and Chuang, 2011).
-- Experiential learning and expert interaction are key mechanisms for transferring tacit knowledge in construction, where much knowledge is project-specific and hard to codify (Teerajetgul and Charoenngam, 2006).
+${summary}
 
 YOUR TASK:
-Do NOT repeat the scores or restate data. Instead, provide a practical action plan:
+Do NOT repeat the scores. Provide a practical action plan:
 
-1. DIAGNOSIS (3-4 sentences): What does this profile reveal about the organization's KM maturity? What is the root pattern behind the numbers?
+1. DIAGNOSIS (3-4 sentences): What does this profile reveal about the organization's KM maturity?
 
-2. IMMEDIATE WINS (next 1-3 months): 2-3 low-cost, quick-to-implement actions that can show visible progress. Be very specific (e.g., "Launch a monthly cross-project lessons-learned session" not "improve knowledge sharing"). Explain WHY each works, citing relevant research.
+2. IMMEDIATE WINS (next 1-3 months): 2-3 low-cost, quick actions. Be specific. Cite relevant research.
 
-3. STRATEGIC INITIATIVES (3-12 months): 3-4 larger interventions. For each one, describe exactly what to do, what resources are needed, and what outcome to expect. Ground each in evidence (e.g., "Research shows that empowering leadership increases creative process engagement - Zhang and Bartol, 2010").
+3. STRATEGIC INITIATIVES (3-12 months): 3-4 larger interventions with resources and expected outcomes.
 
-4. WHAT TO AVOID: 2 common mistakes this type of organization typically makes when trying to improve KM, based on the research evidence.
+4. WHAT TO AVOID: 2 common mistakes this type of organization makes.
 
-Write in a direct, advisory tone as if you are presenting to the organization's leadership team. Use plain language, not academic jargon. Format with markdown headers and bullet points.`;
+Write in a direct, advisory tone. Use markdown headers and bullet points.`;
 
     try {
-      const resp = await fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+      const resp = await fetch("/api/recommend", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({prompt}) });
       const data = await resp.json();
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setOutput(data.result);
-      }
-    } catch (err) {
-      setError(`Connection failed: ${err.message}`);
-    }
+      if (data.error) setError(data.error); else setOutput(data.result);
+    } catch(e) { setError(`Connection failed: ${e.message}`); }
     setLoading(false);
   };
 
-  useEffect(() => { generateAI(); }, []);
+  useEffect(() => { generate(); }, []);
 
-  const formatMarkdown = (text) => {
-    return text
-      .replace(/### (.*)/g, "<h4>$1</h4>")
-      .replace(/## (.*)/g, "<h4>$1</h4>")
-      .replace(/# (.*)/g, "<h4>$1</h4>")
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/^- (.*)/gm, "<li>$1</li>")
-      .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
-      .replace(/<\/ul>\s*<ul>/g, "")
-      .replace(/\n{2,}/g, "<br><br>")
-      .replace(/\n/g, "<br>");
-  };
+  const fmt = t => t.replace(/### (.*)/g,"<h4>$1</h4>").replace(/## (.*)/g,"<h4>$1</h4>").replace(/# (.*)/g,"<h4>$1</h4>").replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>").replace(/^- (.*)/gm,"<li>$1</li>").replace(/(<li>.*<\/li>)/gs,"<ul>$1</ul>").replace(/<\/ul>\s*<ul>/g,"").replace(/\n{2,}/g,"<br><br>").replace(/\n/g,"<br>");
 
   return (
     <div className="card">
-      <div className="card-header">
-        <div>
-          <h2>{"\u2728"} AI-Powered Action Plan</h2>
-          <p>Practical improvement strategies grounded in KM research, tailored to your scores</p>
-        </div>
-      </div>
+      <div className="ch"><div><h2>{"\u2728"} AI-Powered Action Plan</h2><p>Practical improvement strategies grounded in KM research</p></div></div>
       <div className="ai-box">
-        {loading ? (
-          <div className="ai-loading"><div className="spinner" /> Analyzing your profile and preparing a tailored action plan...</div>
-        ) : error ? (
-          <div>
-            <p style={{ color: "var(--red)", marginBottom: 12 }}>{error}</p>
-            <button className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: 12 }} onClick={generateAI}>{"\u21BB"} Try Again</button>
-          </div>
-        ) : output ? (
-          <div>
-            <div dangerouslySetInnerHTML={{ __html: formatMarkdown(output) }} />
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-              <button className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: 12 }} onClick={generateAI}>{"\u21BB"} Regenerate</button>
-            </div>
-          </div>
-        ) : null}
+        {loading ? <div className="ai-ld"><div className="spin"/>Analyzing your profile...</div>
+        : error ? <div><p style={{color:"var(--red)",marginBottom:12}}>{error}</p><button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Try Again</button></div>
+        : output ? <div><div dangerouslySetInnerHTML={{__html:fmt(output)}}/><div style={{marginTop:16,paddingTop:12,borderTop:"1px solid var(--border)"}}><button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Regenerate</button></div></div>
+        : null}
       </div>
     </div>
   );
 }
 
 function ResultsSection({ ratings, onReset }) {
-  const [animatedEI, setAnimatedEI] = useState(0);
+  const [animPct, setAnimPct] = useState(0);
 
   const compScores = {};
-  let eiTotal = 0;
-  COMPONENT_KEYS.forEach((cKey) => {
-    const comp = KMIC_DATA[cKey];
-    let compScore = 0;
-    comp.factors.forEach((f) => {
-      eiTotal += f.ow * (ratings[f.code] || 0);
-      compScore += (f.ow / comp.groupWeight) * (ratings[f.code] || 0);
+  let kmicIndex = 0;
+  COMP_KEYS.forEach(cKey => {
+    const comp = B.components[cKey];
+    let cs = 0;
+    Object.entries(comp.factors).forEach(([code, f]) => {
+      kmicIndex += f.ow * (ratings[code]||0);
+      cs += (f.ow / comp.groupWeight) * (ratings[code]||0);
     });
-    compScores[cKey] = compScore;
+    compScores[cKey] = cs;
   });
 
+  const pct = ((kmicIndex - 1) / 4) * 100;
+  const percentile = getPercentile(kmicIndex);
+  const level = getLevel(kmicIndex);
+
   useEffect(() => {
-    const duration = 1200;
-    const start = performance.now();
-    const tick = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
-      setAnimatedEI(eiTotal * (1 - Math.pow(1 - progress, 3)));
-      if (progress < 1) requestAnimationFrame(tick);
+    const dur = 1200, start = performance.now();
+    const tick = now => {
+      const p = Math.min((now-start)/dur, 1);
+      setAnimPct(pct * (1-Math.pow(1-p,3)));
+      if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [eiTotal]);
-
-  const level = eiTotal >= 4.5 ? { text: "Very High", bg: "var(--green)" }
-    : eiTotal >= 3.5 ? { text: "High", bg: "var(--accent)" }
-    : eiTotal >= 2.5 ? { text: "Moderate", bg: "var(--orange)" }
-    : eiTotal >= 1.5 ? { text: "Low", bg: "var(--red)" }
-    : { text: "Very Low", bg: "var(--red)" };
+  }, [pct]);
 
   return (
-    <div style={{ animation: "fadeUp 0.4s ease" }}>
+    <div style={{animation:"fu .4s ease"}}>
+      {/* Score Hero */}
       <div className="card">
-        <div className="score-hero">
-          <div className="score-label">Your Organization's KMIC Index</div>
-          <div className="score-big">{animatedEI.toFixed(3)}</div>
-          <div className="score-label">out of 5.000</div>
-          <div className="score-level" style={{ background: level.bg }}>{level.text}</div>
+        <div className="hero">
+          <div className="slbl">Your Organization's KMIC Index</div>
+          <div className="big-pct">{animPct.toFixed(1)}%</div>
+          <div className="big-raw">Score: {kmicIndex.toFixed(3)} on a 1 to 5 scale</div>
+          <div className="lvl" style={{background:level.color}}>{level.text}</div>
         </div>
-        <div style={{ padding: "0 8px" }}>
-          <div className="benchmark-bar">
-            <div className="benchmark-fill" style={{ width: `${(eiTotal / 5) * 100}%` }} />
-            <div className="benchmark-marker" style={{ left: `${(SURVEY_OVERALL / 5) * 100}%` }}>
-              <div className="benchmark-marker-label">Survey avg: 3.767</div>
+
+        {/* Percentile */}
+        <div className="pctl">
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}>
+            <span className="pctl-num">{percentile}<sup style={{fontSize:16,verticalAlign:"super"}}>{percentile===1?"st":percentile===2?"nd":percentile===3?"rd":"th"}</sup></span>
+            <span style={{fontSize:16,color:"var(--t2)",fontWeight:500}}>percentile</span>
+          </div>
+          <div className="pctl-lbl">
+            Your score is higher than {percentile}% of the {B.overall.n} surveyed A/E/C firms
+          </div>
+        </div>
+
+        {/* Benchmark bar */}
+        <div style={{padding:"16px 8px 0"}}>
+          <div className="bbar">
+            <div className="bfill" style={{width:`${((kmicIndex - 1) / 4) * 100}%`}}/>
+            <div className="bmk" style={{left:`${((B.overall.index - 1) / 4) * 100}%`}}>
+              <div className="bmkl">Survey avg: {B.overall.index}</div>
             </div>
           </div>
-          <div className="bar-legend"><span>1.0 Very Low</span><span>3.0 Moderate</span><span>5.0 Very High</span></div>
+          <div className="bleg"><span>1.0 Very Low</span><span>3.0 Moderate</span><span>5.0 Very High</span></div>
         </div>
       </div>
 
+      {/* Distribution histogram */}
       <div className="card">
-        <div className="card-header"><div><h2>Component Breakdown</h2><p>Weighted scores for each KMIC component vs. survey benchmarks</p></div></div>
-        {COMPONENT_KEYS.map((cKey, i) => (
-          <div className="component-row" key={cKey}>
-            <span className="comp-name">{KMIC_DATA[cKey].name}</span>
-            <div className="comp-bar-wrap"><div className="comp-bar-fill" style={{ width: `${(compScores[cKey] / 5) * 100}%`, background: COMPONENT_COLORS[i] }} /></div>
-            <span className="comp-score" style={{ color: COMPONENT_COLORS[i] }}>{compScores[cKey].toFixed(2)}</span>
-          </div>
-        ))}
+        <div className="ch"><div><h2>Where You Stand</h2><p>Distribution of KMIC Index scores across {B.overall.n} surveyed organizations</p></div></div>
+        <IndexHistogram userScore={kmicIndex}/>
       </div>
 
+      {/* Component Breakdown */}
       <div className="card">
-        <div className="card-header"><div><h2>KMIC Profile</h2><p>Your organization (gold) compared to the survey average of 220 A/E/C firms (blue)</p></div></div>
-        <RadarChart compScores={compScores} />
+        <div className="ch"><div><h2>Component Breakdown</h2><p>How your organization compares across five KMIC dimensions</p></div></div>
+
+        {/* Interpretation note */}
+        <div style={{background:"var(--input)",border:"1px solid var(--border)",borderRadius:6,padding:16,marginBottom:20,fontSize:12,lineHeight:1.8,color:"var(--t2)"}}>
+          <strong style={{color:"var(--gold)",fontSize:13}}>Powered by Fuzzy Synthetic Evaluation (FSE)</strong>
+          <br/>
+          Unlike simple averaging, this analysis uses the FSE method to capture the full picture of how {B.overall.n} surveyed firms actually responded. Instead of reducing everything to a single number, the colored bar below shows the distribution of responses across five levels (Very Low to Very High), so you can see where most firms cluster and how spread out the opinions are. Your firm's category is highlighted in full color. The scale bar underneath shows your exact score (gold dot) compared to the survey average (gray line) on a 1 to 5 scale.
+        </div>
+
+        {/* Compact legend */}
+        <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20,justifyContent:"center"}}>
+          {DIST_LABELS.map((l,i) => (
+            <div key={l} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--t2)"}}>
+              <span style={{width:10,height:10,borderRadius:2,background:DIST_COLORS[i],display:"inline-block",flexShrink:0}}/>{l}
+            </div>
+          ))}
+        </div>
+
+        {COMP_RANKED.map((cKey, idx) => {
+          const bench = B.components[cKey];
+          const userVal = compScores[cKey];
+          const delta = userVal - bench.importantIndex;
+          const deltaPct = bench.importantIndex > 0 ? ((userVal - bench.importantIndex) / bench.importantIndex * 100) : 0;
+          const mem = bench.membership;
+          const isLast = idx === COMP_RANKED.length - 1;
+
+          const userGrade = Math.round(Math.max(1, Math.min(5, userVal)));
+          const activeIdx = userGrade - 1;
+          const activeLabel = DIST_LABELS[activeIdx];
+          const activePct = (mem[activeIdx] * 100).toFixed(0);
+
+          const userLinear = ((userVal - 1) / 4) * 100;
+          const benchLinear = ((bench.importantIndex - 1) / 4) * 100;
+
+          return (
+            <div key={cKey} style={{paddingBottom:isLast?0:24,marginBottom:isLast?0:24,borderBottom:isLast?"none":"1px solid var(--border)"}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6,flexWrap:"wrap"}}>
+                <span style={{fontSize:12,color:"var(--t3)",fontWeight:600}}>#{bench.rank}</span>
+                <span style={{fontSize:14,fontWeight:600,color:"var(--t1)"}}>{bench.name}</span>
+                <span style={{fontSize:12,color:"var(--t3)"}}>({COMP_SUBTITLES[cKey]})</span>
+              </div>
+
+              <div style={{marginLeft:22}}>
+                <div style={{fontSize:12,color:"var(--t1)",marginBottom:4}}>
+                  Your firm is in the <span style={{fontWeight:700,color:DIST_COLORS[activeIdx]}}>{activeLabel}</span> category <span style={{color:"var(--t3)"}}>({activePct}% of firms are also in this group)</span>
+                </div>
+
+                <div style={{position:"relative"}}>
+                  {(() => {
+                    let arrowLeft = 0;
+                    for (let i = 0; i < activeIdx; i++) arrowLeft += mem[i];
+                    arrowLeft += mem[activeIdx] / 2;
+                    return (
+                      <div style={{position:"absolute",top:0,left:`${arrowLeft*100}%`,transform:"translateX(-50%)",display:"flex",flexDirection:"column",alignItems:"center",zIndex:3}}>
+                        <span style={{width:0,height:0,borderLeft:"6px solid transparent",borderRight:"6px solid transparent",borderTop:"7px solid var(--gold)"}}/>
+                      </div>
+                    );
+                  })()}
+                  <div style={{display:"flex",height:28,borderRadius:4,overflow:"hidden",position:"relative",marginTop:10}}>
+                    {mem.map((m, i) => (
+                    <div key={i}
+                      title={`${DIST_LABELS[i]}: ${(m*100).toFixed(1)}% of surveyed firms`}
+                      style={{
+                        width:`${m*100}%`,
+                        background:DIST_COLORS[i],
+                        opacity: m < 0.01 ? 0 : (i === activeIdx ? 1 : 0.25),
+                        height:28,
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontWeight:700,
+                        color: i === activeIdx ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)",
+                        cursor:"default",
+                        transition:"opacity .4s",
+                      }}>
+                      {m >= 0.06 && `${(m*100).toFixed(0)}%`}
+                    </div>
+                  ))}
+                </div>
+                </div>
+
+                {/* Linear scale bar */}
+                <div style={{position:"relative",marginTop:14}}>
+                  <div style={{height:6,background:"var(--input)",borderRadius:100,position:"relative",overflow:"visible"}}>
+                    <div style={{height:"100%",borderRadius:100,background:COMP_COLORS_MAP[cKey],width:`${userLinear}%`,transition:"width .6s"}}/>
+                    <div style={{position:"absolute",top:-4,left:`${benchLinear}%`,width:2,height:14,background:"var(--t3)",borderRadius:1}}/>
+                    <div style={{position:"absolute",top:-5,left:`${userLinear}%`,width:12,height:12,borderRadius:"50%",background:"var(--gold)",border:"2px solid var(--bg)",boxShadow:"0 0 8px rgba(212,168,83,0.5)",transform:"translateX(-50%)",transition:"left .6s"}}/>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--t3)"}}>
+                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                    <div style={{fontSize:12,color:"var(--t2)"}}>
+                      Your score: <span style={{fontWeight:700,color:"var(--gold)"}}>{userVal.toFixed(2)}</span>
+                    </div>
+                    <div style={{fontSize:12,color:"var(--t2)"}}>
+                      Benchmark: <span style={{fontWeight:600,color:"var(--accent-l)"}}>{bench.importantIndex.toFixed(2)}</span>
+                      <span style={{marginLeft:4,fontWeight:600,color:delta>0?"var(--green)":delta<0?"var(--red)":"var(--t3)"}}>
+                        ({Math.abs(deltaPct).toFixed(0)}% {delta>=0?"above":"below"} typical)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
+      {/* Peer comparison */}
+      <SegmentComparison compScores={compScores} userScore={kmicIndex}/>
+
+      {/* Methodology */}
       <div className="card">
-        <div className="card-header"><div><h2>Factor Benchmarks</h2><p>How your rating on each factor compares to the survey distribution of 220 respondents</p></div></div>
-        <DistributionBenchmark ratings={ratings} />
+        <div className="ch"><div><h2>How This Was Calculated</h2><p>A brief overview of the methods behind your scores</p></div></div>
+        <div className="method-box">
+          <h4>Fuzzy Synthetic Evaluation (FSE)</h4>
+          Your scores are computed using the FSE approach, a multi-criteria evaluation technique designed
+          for situations where subjective assessments need to be aggregated into quantitative indexes. Rather
+          than treating Likert-scale ratings as simple averages, FSE preserves the full distribution of
+          responses through membership functions, which capture the proportion of respondents at each
+          rating level. These membership functions are then combined using derived weightings to produce
+          component-level and overall KMIC indexes.
+          <h4>KMIC Index Formula</h4>
+          Your KMIC Index is calculated as KMIC = &Sigma;(OW<sub>ij</sub> &times; RS<sub>ij</sub>),
+          where OW<sub>ij</sub> is the overall weight of each factor (derived from CFA factor loadings and
+          FSE group weights) and RS<sub>ij</sub> is your rating score. This integrates both statistical
+          importance and empirical weighting from {B.overall.n} survey respondents.
+          <h4>Classification: Confidence Criterion</h4>
+          Each score is classified into a level (Very Low through Very High) using the confidence criterion
+          with lambda = 0.5. This method accumulates membership from the highest grade downward until the
+          cumulative value reaches 50%. The grade where this threshold is crossed determines the
+          classification. This is more robust than the simpler maximum membership principle because it
+          avoids edge cases where the top grade barely leads. This approach follows established FSE
+          literature (Xu et al., 2010; Osei-Kyei and Chan, 2017).
+          <h4>Benchmark Data</h4>
+          All benchmarks come from a survey of {B.overall.n} A/E/C practitioners in Vietnam, validated
+          through confirmatory factor analysis (CFA) with strong construct reliability (CR &gt; 0.7,
+          AVE &gt; 0.5 for most components). The Mann-Whitney U test confirmed that KMIC factors are
+          consistent across firm types and sizes (p &gt; 0.05), supporting the benchmark's broad
+          applicability within the A/E/C sector.
+        </div>
       </div>
 
-      <AIRecommendations ratings={ratings} />
+      {/* AI */}
+      <AIRecommendations ratings={ratings}/>
 
-      <div className="btn-row" style={{ marginBottom: 40 }}>
-        <button className="btn btn-secondary" onClick={onReset}>{"\u21BA"} Start Over</button>
+      <div className="br" style={{marginBottom:40}}>
+        <button className="btn btn-s" onClick={onReset}>{"\u21BA"} Start Over</button>
       </div>
     </div>
   );
 }
 
-// ─── Main App ───
+// ── Main ──
 export default function KMICApp() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [step, setStep] = useState(0);
   const [ratings, setRatings] = useState({});
 
-  const handleRate = (code, value) => { setRatings((prev) => ({ ...prev, [code]: value })); };
-  const isSectionComplete = (stepIndex) => {
-    if (stepIndex >= 5) return true;
-    return KMIC_DATA[COMPONENT_KEYS[stepIndex]].factors.every((f) => ratings[f.code] > 0);
+  const handleRate = (code, val) => setRatings(p => ({...p,[code]:val}));
+  const isComplete = si => {
+    if (si>=5) return true;
+    const comp = B.components[COMP_KEYS[si]];
+    return Object.keys(comp.factors).every(f => ratings[f] > 0);
   };
-  const goNext = () => { setCurrentStep((s) => Math.min(s + 1, 5)); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const goBack = () => { setCurrentStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const reset = () => { setRatings({}); setCurrentStep(0); window.scrollTo({ top: 0, behavior: "smooth" }); };
-
-  const nextCompName = currentStep < 4 ? KMIC_DATA[COMPONENT_KEYS[currentStep + 1]].name : null;
+  const goNext = () => { setStep(s=>Math.min(s+1,5)); window.scrollTo({top:0,behavior:"smooth"}); };
+  const goBack = () => { setStep(s=>Math.max(s-1,0)); window.scrollTo({top:0,behavior:"smooth"}); };
+  const reset = () => { setRatings({}); setStep(0); window.scrollTo({top:0,behavior:"smooth"}); };
 
   return (
     <>
       <style>{css}</style>
-      <div className="app-container">
-        <header className="app-header">
-          <div className="logo-badge"><span className="dot" /> KMIC Assessment</div>
-          <h1>Knowledge Management<br />Infrastructure <span>Capability</span></h1>
-          <p className="subtitle">
-            How well does your organization create, share, and apply knowledge? This tool measures five key dimensions of knowledge management readiness and benchmarks your performance against 220 A/E/C firms in developing economies.
+      <div className="app">
+        <header className="hdr">
+          <div className="badge"><span className="dot"/> KMIC Assessment</div>
+          <h1>Knowledge Management<br/>Infrastructure <span>Capability</span></h1>
+          <p className="sub">
+            How well does your organization create, share, and apply knowledge? Rate five key dimensions and benchmark against {B.overall.n} architecture, engineering, and construction (A/E/C) firms using the Fuzzy Synthetic Evaluation (FSE) based KMIC Index model.
           </p>
+          <div style={{marginTop:16,padding:"12px 20px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,maxWidth:600,marginLeft:"auto",marginRight:"auto",fontSize:13,color:"var(--t2)",lineHeight:1.7,textAlign:"left"}}>
+            <strong style={{color:"var(--gold)"}}>What is the KMIC Index?</strong> It measures how ready your organization's foundation is to support knowledge management, covering five areas: trust and collaboration among employees, organizational culture and values, information systems, written policies, and employee empowerment. A higher score (closer to 5) means stronger foundational capability for creating, sharing, and applying knowledge effectively.
+          </div>
         </header>
-        <Stepper current={currentStep} />
-        {currentStep < 5 && (
-          <div key={currentStep}>
-            <ComponentCard comp={KMIC_DATA[COMPONENT_KEYS[currentStep]]} ratings={ratings} onRate={handleRate} />
-            <div className="btn-row">
-              {currentStep > 0 && <button className="btn btn-secondary" onClick={goBack}>{"\u2190"} Back</button>}
-              {currentStep < 4 ? (
-                <button className="btn btn-primary" disabled={!isSectionComplete(currentStep)} onClick={goNext}>
-                  Next: {nextCompName} {"\u2192"}
+        <Stepper current={step}/>
+        {step<5 && (
+          <div key={step}>
+            <ComponentCard compKey={COMP_KEYS[step]} compIdx={step} ratings={ratings} onRate={handleRate}/>
+            <div className="br">
+              {step>0&&<button className="btn btn-s" onClick={goBack}>{"\u2190"} Back</button>}
+              {step<4 ? (
+                <button className="btn btn-p" disabled={!isComplete(step)} onClick={goNext}>
+                  Next: {B.components[COMP_KEYS[step+1]].shortName} {"\u2192"}
                 </button>
               ) : (
-                <button className="btn btn-gold" disabled={!isSectionComplete(currentStep)} onClick={goNext}>
+                <button className="btn btn-g" disabled={!isComplete(step)} onClick={goNext}>
                   {"\u2733"} Calculate KMIC Index
                 </button>
               )}
             </div>
           </div>
         )}
-        {currentStep === 5 && <ResultsSection ratings={ratings} onReset={reset} />}
+        {step===5 && <ResultsSection ratings={ratings} onReset={reset}/>}
         <footer>
-          <p>KMIC Assessment Tool - Based on the FSE-based Enabling Index model for A/E/C organizations</p>
-          <p style={{ marginTop: 4 }}>Reference: Forming an enabling index of knowledge management infrastructure capability levels for A/E/C organizations</p>
+          <p>KMIC Assessment Tool -- Based on the FSE-based KMIC Index model for architecture, engineering, and construction organizations</p>
+          <p style={{marginTop:4}}>Classification: Confidence criterion (lambda=0.5) per Xu et al. (2010) and Osei-Kyei and Chan (2017)</p>
         </footer>
       </div>
     </>
