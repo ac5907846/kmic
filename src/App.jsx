@@ -1,23 +1,348 @@
 import { useState, useEffect } from "react";
 
+// ── TRANSLATIONS ──
+const T = {
+  en: {
+    // Header
+    badge: "KMIC Assessment",
+    headerTitle1: "Knowledge Management",
+    headerTitle2: "Infrastructure",
+    headerTitle3: "Capability",
+    headerSub: (n) =>
+      `How well does your organization create, share, and apply knowledge? Rate five key dimensions and benchmark against ${n} architecture, engineering, and construction (A/E/C) firms using the Fuzzy Synthetic Evaluation (FSE) based KMIC Index model.`,
+    whatIsTitle: "What is the KMIC Index?",
+    whatIsBody:
+      "It measures how ready your organization's foundation is to support knowledge management, covering five areas: trust and collaboration among employees, organizational culture and values, information systems, written policies, and employee empowerment. A higher score (closer to 5) means stronger foundational capability for creating, sharing, and applying knowledge effectively.",
+
+    // Stepper & navigation
+    back: "\u2190 Back",
+    nextPrefix: "Next:",
+    calculate: "\u2733 Calculate KMIC Index",
+    startOver: "\u21BA Start Over",
+
+    // Component card
+    rateInstruction: "Rate each factor from 1 (Very Low) to 5 (Very High)",
+    veryLow: "Very Low",
+    veryHigh: "Very High",
+
+    // Results - hero
+    yourOrgIndex: "Your Organization's KMIC Index",
+    scoreLabel: (score) => `Score: ${score} on a 1 to 5 scale`,
+    percentile: "percentile",
+    percentileDesc: (p, n) =>
+      `Your score is higher than ${p}% of the ${n} surveyed A/E/C firms`,
+
+    // Results - bar
+    surveyAvg: (v) => `Survey avg: ${v}`,
+    veryLowScale: "1.0 Very Low",
+    moderateScale: "3.0 Moderate",
+    veryHighScale: "5.0 Very High",
+
+    // Histogram
+    whereYouStand: "Where You Stand",
+    whereYouStandDesc: (n) =>
+      `Distribution of KMIC Index scores across ${n} surveyed organizations`,
+
+    // Component breakdown
+    componentBreakdown: "Component Breakdown",
+    componentBreakdownDesc:
+      "How your organization compares across five KMIC dimensions",
+    fseTitle: "Powered by Fuzzy Synthetic Evaluation (FSE)",
+    fseDesc: (n) =>
+      `Unlike simple averaging, this analysis uses the FSE method to capture the full picture of how ${n} surveyed firms actually responded. Instead of reducing everything to a single number, the colored bar below shows the distribution of responses across five levels (Very Low to Very High), so you can see where most firms cluster and how spread out the opinions are. Your firm's category is highlighted in full color. The scale bar underneath shows your exact score (gold dot) compared to the survey average (gray line) on a 1 to 5 scale.`,
+    distLabels: ["Very Low", "Low", "Medium", "High", "Very High"],
+    yourFirmInCategory: (label, pct) =>
+      `Your firm is in the <strong>${label}</strong> category (${pct}% of firms are also in this group)`,
+    yourScore: "Your score:",
+    benchmark: "Benchmark:",
+    aboveTypical: (pct) => `${pct}% above typical`,
+    belowTypical: (pct) => `${pct}% below typical`,
+
+    // Segment comparison
+    profileTitle: "KMIC Profile & Peer Comparison",
+    profileDesc:
+      "Your organization's profile compared against peer groups",
+    allFirms: "All Firms",
+    firmType: "Firm Type",
+    firmSize: "Firm Size",
+    selectGroupHint:
+      "Select a group above, or viewing all firms by default",
+    yourOrg: "Your organization",
+    peerBenchmark: "Peer benchmark",
+    higherThanPeers: "higher than peers",
+    lowerThanPeers: "lower than peers",
+
+    // Methodology
+    methodTitle: "How This Was Calculated",
+    methodDesc: "A brief overview of the methods behind your scores",
+    methodFSETitle: "Fuzzy Synthetic Evaluation (FSE)",
+    methodFSEBody: (n) =>
+      `Your scores are computed using the FSE approach, a multi-criteria evaluation technique designed for situations where subjective assessments need to be aggregated into quantitative indexes. Rather than treating Likert-scale ratings as simple averages, FSE preserves the full distribution of responses through membership functions, which capture the proportion of respondents at each rating level. These membership functions are then combined using derived weightings to produce component-level and overall KMIC indexes.`,
+    methodFormulaTitle: "KMIC Index Formula",
+    methodFormulaBody: (n) =>
+      `Your KMIC Index is calculated as KMIC = \u03A3(OW<sub>ij</sub> \u00D7 RS<sub>ij</sub>), where OW<sub>ij</sub> is the overall weight of each factor (derived from CFA factor loadings and FSE group weights) and RS<sub>ij</sub> is your rating score. This integrates both statistical importance and empirical weighting from ${n} survey respondents.`,
+    methodClassTitle: "Classification: Confidence Criterion",
+    methodClassBody:
+      "Each score is classified into a level (Very Low through Very High) using the confidence criterion with lambda = 0.5. This method accumulates membership from the highest grade downward until the cumulative value reaches 50%. The grade where this threshold is crossed determines the classification. This is more robust than the simpler maximum membership principle because it avoids edge cases where the top grade barely leads. This approach follows established FSE literature (Xu et al., 2010; Osei-Kyei and Chan, 2017).",
+    methodBenchTitle: "Benchmark Data",
+    methodBenchBody: (n) =>
+      `All benchmarks come from a survey of ${n} A/E/C practitioners in Vietnam, validated through confirmatory factor analysis (CFA) with strong construct reliability (CR > 0.7, AVE > 0.5 for most components). The Mann-Whitney U test confirmed that KMIC factors are consistent across firm types and sizes (p > 0.05), supporting the benchmark's broad applicability within the A/E/C sector.`,
+
+    // Recommendations
+    recTitle: "Recommendations",
+    recAnalyzing: "Analyzing your profile...",
+    recTryAgain: "\u21BB Try Again",
+    recRegenerate: "\u21BB Regenerate",
+    recDisclaimer: "Recommendation synthesis assisted by Gemini 2.5 Flash Lite",
+
+    // Footer
+    footerText:
+      'This tool accompanies a manuscript currently under peer review. Source code is available at <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent-l);text-decoration:none">github.com/ac5907846/kmic</a>. Full methodological details and citation information will be provided upon publication.',
+
+    // Segment group labels
+    segGroups: {
+      "Construction firms": "Construction firms",
+      "Engineering/design firms": "Engineering/design firms",
+      Large: "Large",
+      "Small/medium": "Small/medium",
+    },
+
+    // Component names
+    compNames: {
+      C1: "Mutual Trust & Collaboration",
+      C2: "Organizational Values & Norms",
+      C3: "Information & Communication Systems",
+      C4: "Organizational Policies",
+      C5: "Employee Empowerment",
+    },
+    compShortNames: {
+      C1: "Trust & Collaboration",
+      C2: "Values & Norms",
+      C3: "Info & Comm Systems",
+      C4: "Org Policies",
+      C5: "Empowerment",
+    },
+    compSubtitles: {
+      C1: "e.g., trusting colleagues, supporting each other, collaborating willingly",
+      C2: "e.g., encouraging knowledge sharing, innovation, and continuous learning",
+      C3: "e.g., using communication tools, databases, and expert networks effectively",
+      C4: "e.g., having clear written policies that guide daily operations",
+      C5: "e.g., giving employees authority to make decisions and take action",
+    },
+    compRadarNames: {
+      C1: "Mutual Trust &\nCollaboration",
+      C2: "Organizational\nValues & Norms",
+      C3: "Information &\nComm Systems",
+      C4: "Organizational\nPolicies",
+      C5: "Employee\nEmpowerment",
+    },
+
+    // Factor descriptions
+    factors: {
+      C11: "Trust in colleagues' abilities",
+      C12: "Trust in colleagues' attitudes to work toward organizational goals",
+      C13: "Trust in colleagues' decisions toward organizational interests",
+      C14: "Employees' willingness to collaborate with others",
+      C15: "Employees' willingness to support others",
+      C16: "Employees' willingness to take responsibility in coordination",
+      C21: "Promoting knowledge sharing",
+      C22: "Facilitating employees to foster knowledge and skills",
+      C23: "Promoting strategic collaborations to acquire knowledge",
+      C24: "Encouraging employees to be creative and innovative at work",
+      C25: "Facilitating employees' experiential learning",
+      C31: "Effective use of internal communication channels",
+      C32: "Effective use of external communication channels",
+      C33: "Information systems available for sharing experience and knowledge",
+      C34: "Information system available for managerial activities",
+      C35: "Encouraging interactions with experts",
+      C41: "Operations aligning with firm policies",
+      C42: "External and internal communications aligning with firm policies",
+      C43: "Firm policies available in writing",
+      C51: "Empowering employees to take action within authority",
+      C52: "Empowering employees to make decisions",
+    },
+
+    // Levels
+    levels: {
+      "Very High": "Very High",
+      High: "High",
+      Moderate: "Moderate",
+      Low: "Low",
+      "Very Low": "Very Low",
+    },
+
+    // AI prompt language instruction
+    aiLangInstruction: "",
+  },
+  vi: {
+    badge: "Khảo sát KMIC",
+    headerTitle1: "Hạ tầng Quản lý",
+    headerTitle2: "Tri thức",
+    headerTitle3: "Tổ chức",
+    headerSub: (n) =>
+      `Tổ chức của bạn tạo lập, chia sẻ và áp dụng tri thức hiệu quả đến mức nào? Đánh giá năm khía cạnh chính và so sánh chuẩn với ${n} doanh nghiệp kiến trúc, kỹ thuật và xây dựng (A/E/C) bằng mô hình Chỉ số KMIC dựa trên phương pháp Đánh giá Tổng hợp Mờ (FSE).`,
+    whatIsTitle: "Chỉ số KMIC là gì?",
+    whatIsBody:
+      "Chỉ số này đo lường mức độ sẵn sàng của nền tảng tổ chức trong việc hỗ trợ quản lý tri thức, bao gồm năm lĩnh vực: sự tin tưởng và hợp tác giữa nhân viên, văn hóa và giá trị tổ chức, hệ thống thông tin, các chính sách bằng văn bản, và trao quyền cho nhân viên. Điểm số càng cao (gần 5) nghĩa là năng lực nền tảng càng mạnh cho việc tạo lập, chia sẻ và áp dụng tri thức hiệu quả.",
+
+    back: "\u2190 Quay lại",
+    nextPrefix: "Tiếp:",
+    calculate: "\u2733 Tính Chỉ số KMIC",
+    startOver: "\u21BA Bắt đầu lại",
+
+    rateInstruction:
+      "Đánh giá từng yếu tố từ 1 (Rất thấp) đến 5 (Rất cao)",
+    veryLow: "Rất thấp",
+    veryHigh: "Rất cao",
+
+    yourOrgIndex: "Chỉ số KMIC của Tổ chức",
+    scoreLabel: (score) => `Điểm: ${score} trên thang 1 đến 5`,
+    percentile: "phân vị",
+    percentileDesc: (p, n) =>
+      `Điểm của bạn cao hơn ${p}% trong số ${n} doanh nghiệp A/E/C được khảo sát`,
+
+    surveyAvg: (v) => `Trung bình khảo sát: ${v}`,
+    veryLowScale: "1.0 Rất thấp",
+    moderateScale: "3.0 Trung bình",
+    veryHighScale: "5.0 Rất cao",
+
+    whereYouStand: "Vị trí của Bạn",
+    whereYouStandDesc: (n) =>
+      `Phân bố điểm Chỉ số KMIC trên ${n} tổ chức được khảo sát`,
+
+    componentBreakdown: "Phân tích theo Thành phần",
+    componentBreakdownDesc:
+      "So sánh tổ chức của bạn trên năm chiều KMIC",
+    fseTitle: "Sử dụng phương pháp Đánh giá Tổng hợp Mờ (FSE)",
+    fseDesc: (n) =>
+      `Khác với việc tính trung bình đơn giản, phân tích này sử dụng phương pháp FSE để phản ánh đầy đủ cách ${n} doanh nghiệp được khảo sát thực sự phản hồi. Thay vì rút gọn mọi thứ thành một con số duy nhất, thanh màu bên dưới cho thấy phân bố phản hồi trên năm mức (Rất thấp đến Rất cao), giúp bạn thấy được phần lớn doanh nghiệp tập trung ở đâu và ý kiến phân tán ra sao. Nhóm của doanh nghiệp bạn được tô đậm. Thanh thang điểm bên dưới hiển thị điểm chính xác của bạn (chấm vàng) so với trung bình khảo sát (vạch xám) trên thang 1 đến 5.`,
+    distLabels: ["Rất thấp", "Thấp", "Trung bình", "Cao", "Rất cao"],
+    yourFirmInCategory: (label, pct) =>
+      `Doanh nghiệp của bạn thuộc nhóm <strong>${label}</strong> (${pct}% doanh nghiệp cũng nằm trong nhóm này)`,
+    yourScore: "Điểm của bạn:",
+    benchmark: "Chuẩn đối sánh:",
+    aboveTypical: (pct) => `cao hơn ${pct}% so với điển hình`,
+    belowTypical: (pct) => `thấp hơn ${pct}% so với điển hình`,
+
+    profileTitle: "Hồ sơ KMIC & So sánh Đồng nghiệp",
+    profileDesc:
+      "Hồ sơ tổ chức của bạn so với các nhóm đồng nghiệp",
+    allFirms: "Tất cả Doanh nghiệp",
+    firmType: "Loại Doanh nghiệp",
+    firmSize: "Quy mô Doanh nghiệp",
+    selectGroupHint:
+      "Chọn một nhóm ở trên, hoặc xem tất cả doanh nghiệp theo mặc định",
+    yourOrg: "Tổ chức của bạn",
+    peerBenchmark: "Chuẩn đối sánh",
+    higherThanPeers: "cao hơn đồng nghiệp",
+    lowerThanPeers: "thấp hơn đồng nghiệp",
+
+    methodTitle: "Phương pháp Tính toán",
+    methodDesc: "Tổng quan ngắn gọn về các phương pháp đằng sau điểm số của bạn",
+    methodFSETitle: "Đánh giá Tổng hợp Mờ (FSE)",
+    methodFSEBody: (n) =>
+      `Điểm số của bạn được tính bằng phương pháp FSE, một kỹ thuật đánh giá đa tiêu chí được thiết kế cho các tình huống cần tổng hợp các đánh giá chủ quan thành chỉ số định lượng. Thay vì coi xếp hạng Likert là trung bình đơn giản, FSE bảo toàn toàn bộ phân bố phản hồi thông qua các hàm thành viên, nắm bắt tỷ lệ người trả lời ở mỗi mức đánh giá. Các hàm thành viên này sau đó được kết hợp bằng trọng số phái sinh để tạo ra chỉ số KMIC ở cấp thành phần và tổng thể.`,
+    methodFormulaTitle: "Công thức Chỉ số KMIC",
+    methodFormulaBody: (n) =>
+      `Chỉ số KMIC được tính là KMIC = \u03A3(OW<sub>ij</sub> \u00D7 RS<sub>ij</sub>), trong đó OW<sub>ij</sub> là trọng số tổng thể của mỗi yếu tố (phái sinh từ hệ số tải CFA và trọng số nhóm FSE) và RS<sub>ij</sub> là điểm đánh giá của bạn. Công thức này tích hợp cả tầm quan trọng thống kê và trọng số thực nghiệm từ ${n} người tham gia khảo sát.`,
+    methodClassTitle: "Phân loại: Tiêu chí Độ tin cậy",
+    methodClassBody:
+      "Mỗi điểm số được phân loại thành một mức (từ Rất thấp đến Rất cao) bằng tiêu chí độ tin cậy với lambda = 0.5. Phương pháp này tích lũy thành viên từ mức cao nhất xuống cho đến khi giá trị tích lũy đạt 50%. Mức mà ngưỡng này được vượt qua sẽ xác định phân loại. Cách này mạnh mẽ hơn nguyên tắc thành viên tối đa đơn giản vì tránh được các trường hợp biên khi mức cao nhất chỉ dẫn đầu sít sao. Phương pháp này tuân theo tài liệu FSE đã được thiết lập (Xu et al., 2010; Osei-Kyei and Chan, 2017).",
+    methodBenchTitle: "Dữ liệu Chuẩn đối sánh",
+    methodBenchBody: (n) =>
+      `Tất cả chuẩn đối sánh đến từ khảo sát ${n} chuyên gia A/E/C tại Việt Nam, được xác nhận qua phân tích nhân tố khẳng định (CFA) với độ tin cậy cấu trúc cao (CR > 0.7, AVE > 0.5 cho hầu hết thành phần). Kiểm định Mann-Whitney U xác nhận các yếu tố KMIC nhất quán giữa các loại và quy mô doanh nghiệp (p > 0.05), hỗ trợ khả năng áp dụng rộng rãi của chuẩn đối sánh trong ngành A/E/C.`,
+
+    recTitle: "Khuyến nghị",
+    recAnalyzing: "Đang phân tích hồ sơ của bạn...",
+    recTryAgain: "\u21BB Thử lại",
+    recRegenerate: "\u21BB Tạo lại",
+    recDisclaimer:
+      "Tổng hợp khuyến nghị được hỗ trợ bởi Gemini 2.5 Flash Lite",
+
+    footerText:
+      'Công cụ này đi kèm với bản thảo đang trong quá trình bình duyệt. Mã nguồn có sẵn tại <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent-l);text-decoration:none">github.com/ac5907846/kmic</a>. Chi tiết phương pháp luận và thông tin trích dẫn đầy đủ sẽ được cung cấp khi công bố.',
+
+    segGroups: {
+      "Construction firms": "Doanh nghiệp Xây dựng",
+      "Engineering/design firms": "Doanh nghiệp Tư vấn thiết kế",
+      Large: "Lớn",
+      "Small/medium": "Nhỏ và vừa",
+    },
+
+    compNames: {
+      C1: "Tin tưởng & Hợp tác",
+      C2: "Giá trị & Chuẩn mực Tổ chức",
+      C3: "Hệ thống Thông tin & Truyền thông",
+      C4: "Chính sách Tổ chức",
+      C5: "Trao quyền Nhân viên",
+    },
+    compShortNames: {
+      C1: "Tin tưởng & Hợp tác",
+      C2: "Giá trị & Chuẩn mực",
+      C3: "Thông tin & Truyền thông",
+      C4: "Chính sách Tổ chức",
+      C5: "Trao quyền",
+    },
+    compSubtitles: {
+      C1: "Ví dụ: tin tưởng đồng nghiệp, hỗ trợ lẫn nhau, sẵn sàng hợp tác",
+      C2: "Ví dụ: khuyến khích chia sẻ tri thức, đổi mới và học hỏi liên tục",
+      C3: "Ví dụ: sử dụng hiệu quả công cụ giao tiếp, cơ sở dữ liệu và mạng lưới chuyên gia",
+      C4: "Ví dụ: có chính sách rõ ràng bằng văn bản hướng dẫn hoạt động hàng ngày",
+      C5: "Ví dụ: trao cho nhân viên quyền ra quyết định và hành động",
+    },
+    compRadarNames: {
+      C1: "Tin tưởng &\nHợp tác",
+      C2: "Giá trị &\nChuẩn mực",
+      C3: "Thông tin &\nTruyền thông",
+      C4: "Chính sách\nTổ chức",
+      C5: "Trao quyền\nNhân viên",
+    },
+
+    factors: {
+      C11: "Tin tưởng vào năng lực của đồng nghiệp",
+      C12: "Tin tưởng vào thái độ làm việc của đồng nghiệp hướng tới mục tiêu tổ chức",
+      C13: "Tin tưởng vào quyết định của đồng nghiệp vì lợi ích tổ chức",
+      C14: "Sự sẵn sàng hợp tác của nhân viên với người khác",
+      C15: "Sự sẵn sàng hỗ trợ của nhân viên đối với người khác",
+      C16: "Sự sẵn sàng chịu trách nhiệm của nhân viên trong phối hợp công việc",
+      C21: "Thúc đẩy chia sẻ tri thức",
+      C22: "Tạo điều kiện cho nhân viên phát triển kiến thức và kỹ năng",
+      C23: "Thúc đẩy hợp tác chiến lược để thu nhận tri thức",
+      C24: "Khuyến khích nhân viên sáng tạo và đổi mới trong công việc",
+      C25: "Tạo điều kiện cho nhân viên học hỏi qua trải nghiệm",
+      C31: "Sử dụng hiệu quả các kênh truyền thông nội bộ",
+      C32: "Sử dụng hiệu quả các kênh truyền thông bên ngoài",
+      C33: "Hệ thống thông tin để chia sẻ kinh nghiệm và tri thức",
+      C34: "Hệ thống thông tin phục vụ hoạt động quản lý",
+      C35: "Khuyến khích tương tác với chuyên gia",
+      C41: "Hoạt động phù hợp với chính sách doanh nghiệp",
+      C42: "Truyền thông nội bộ và bên ngoài phù hợp với chính sách doanh nghiệp",
+      C43: "Chính sách doanh nghiệp có sẵn bằng văn bản",
+      C51: "Trao quyền cho nhân viên hành động trong phạm vi thẩm quyền",
+      C52: "Trao quyền cho nhân viên ra quyết định",
+    },
+
+    levels: {
+      "Very High": "Rất cao",
+      High: "Cao",
+      Moderate: "Trung bình",
+      Low: "Thấp",
+      "Very Low": "Rất thấp",
+    },
+
+    aiLangInstruction: "\n\nIMPORTANT: Respond entirely in Vietnamese.",
+  },
+};
+
 // ── FSE BENCHMARK DATA (from kmic_analysis_fse.py) ──
 const B = {"overall":{"index":3.7663,"membership":[0.0241,0.0861,0.2428,0.3933,0.2537],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.647},"n":220},"groupWeights":{"C1":0.2047,"C2":0.2125,"C3":0.201,"C4":0.2122,"C5":0.1696},"overallWeights":{"C11":0.0305,"C12":0.0347,"C13":0.032,"C14":0.0344,"C15":0.0374,"C16":0.0358,"C21":0.0427,"C22":0.0408,"C23":0.0456,"C24":0.0413,"C25":0.0421,"C31":0.0385,"C32":0.0397,"C33":0.0429,"C34":0.0403,"C35":0.0395,"C41":0.0729,"C42":0.0863,"C43":0.0529,"C51":0.0915,"C52":0.0781},"components":{"C1":{"name":"Mutual Trust & Collaboration","shortName":"Trust & Collaboration","importantIndex":3.7782,"groupWeight":0.2047,"membership":[0.0084,0.0783,0.2609,0.4316,0.2208],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6524},"rank":3,"factors":{"C11":{"desc":"Trust in colleagues' abilities","mean":3.605,"std":0.824,"membership":[0.0,0.0773,0.3818,0.4,0.1409],"importantIndex":3.6045,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5409},"localWeight":0.1592,"ow":0.0305},"C12":{"desc":"Trust in colleagues' attitudes to work toward organizational goals","mean":3.641,"std":0.957,"membership":[0.0136,0.1045,0.3045,0.3818,0.1955],"importantIndex":3.6409,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5773},"localWeight":0.1608,"ow":0.0347},"C13":{"desc":"Trust in colleagues' decisions toward organizational interests","mean":3.655,"std":0.926,"membership":[0.0136,0.0909,0.3045,0.4091,0.1818],"importantIndex":3.6545,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5909},"localWeight":0.1614,"ow":0.032},"C14":{"desc":"Employees' willingness to collaborate with others","mean":3.927,"std":0.909,"membership":[0.0136,0.0636,0.1773,0.4727,0.2727],"importantIndex":3.9273,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7455},"localWeight":0.1735,"ow":0.0344},"C15":{"desc":"Employees' willingness to support others","mean":3.959,"std":0.883,"membership":[0.0091,0.0591,0.1773,0.4727,0.2818],"importantIndex":3.9591,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7545},"localWeight":0.1749,"ow":0.0374},"C16":{"desc":"Employees' willingness to take responsibility in coordination","mean":3.85,"std":0.876,"membership":[0.0,0.0773,0.2364,0.4455,0.2409],"importantIndex":3.85,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6864},"localWeight":0.1701,"ow":0.0358}}},"C2":{"name":"Organizational Values & Norms","shortName":"Values & Norms","importantIndex":3.9222,"groupWeight":0.2125,"membership":[0.0153,0.07,0.2219,0.3627,0.33],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6928},"rank":1,"factors":{"C21":{"desc":"Promoting knowledge sharing","mean":4.082,"std":0.933,"membership":[0.0091,0.0591,0.1636,0.3773,0.3909],"importantIndex":4.0818,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7682},"localWeight":0.2084,"ow":0.0427},"C22":{"desc":"Facilitating employees to foster knowledge and skills","mean":3.786,"std":1.045,"membership":[0.0273,0.0818,0.2636,0.3318,0.2955],"importantIndex":3.7864,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6273},"localWeight":0.1934,"ow":0.0408},"C23":{"desc":"Promoting strategic collaborations to acquire knowledge","mean":3.691,"std":1.023,"membership":[0.0136,0.1182,0.2864,0.3273,0.2545],"importantIndex":3.6909,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5818},"localWeight":0.1885,"ow":0.0456},"C24":{"desc":"Encouraging employees to be creative and innovative at work","mean":4.036,"std":0.945,"membership":[0.0136,0.05,0.1955,0.3682,0.3727],"importantIndex":4.0364,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7409},"localWeight":0.2061,"ow":0.0413},"C25":{"desc":"Facilitating employees' experiential learning","mean":3.986,"std":0.919,"membership":[0.0136,0.0455,0.2091,0.4045,0.3273],"importantIndex":3.9864,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7318},"localWeight":0.2036,"ow":0.0421}}},"C3":{"name":"Information & Communication Systems","shortName":"Info & Comm Systems","importantIndex":3.7083,"groupWeight":0.201,"membership":[0.0318,0.0944,0.2525,0.3764,0.2449],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6213},"rank":4,"factors":{"C31":{"desc":"Effective use of internal communication channels","mean":3.805,"std":0.947,"membership":[0.0091,0.0909,0.2364,0.4136,0.25],"importantIndex":3.8045,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6636},"localWeight":0.2052,"ow":0.0385},"C32":{"desc":"Effective use of external communication channels","mean":3.627,"std":0.945,"membership":[0.0136,0.1136,0.2773,0.4227,0.1727],"importantIndex":3.6273,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.5955},"localWeight":0.1957,"ow":0.0397},"C33":{"desc":"Information systems available for sharing experience and knowledge","mean":3.668,"std":1.112,"membership":[0.05,0.0955,0.25,0.3455,0.2591],"importantIndex":3.6682,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6045},"localWeight":0.1979,"ow":0.0429},"C34":{"desc":"Information system available for managerial activities","mean":3.736,"std":1.116,"membership":[0.05,0.0864,0.2273,0.35,0.2864],"importantIndex":3.7364,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6364},"localWeight":0.2016,"ow":0.0403},"C35":{"desc":"Encouraging interactions with experts","mean":3.7,"std":1.056,"membership":[0.0364,0.0864,0.2727,0.35,0.2545],"importantIndex":3.7,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6045},"localWeight":0.1996,"ow":0.0395}}},"C4":{"name":"Organizational Policies","shortName":"Org Policies","importantIndex":3.9154,"groupWeight":0.2122,"membership":[0.0108,0.0656,0.1973,0.4498,0.2764],"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7263},"rank":2,"factors":{"C41":{"desc":"Operations aligning with firm policies","mean":4.032,"std":0.851,"membership":[0.0045,0.0409,0.1955,0.4364,0.3227],"importantIndex":4.0318,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7591},"localWeight":0.3437,"ow":0.0729},"C42":{"desc":"External and internal communications aligning with firm policies","mean":3.718,"std":0.893,"membership":[0.0,0.1091,0.25,0.4545,0.1864],"importantIndex":3.7182,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6409},"localWeight":0.3169,"ow":0.0863},"C43":{"desc":"Firm policies available in writing","mean":3.982,"std":0.955,"membership":[0.0273,0.05,0.15,0.4591,0.3136],"importantIndex":3.9818,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.7727},"localWeight":0.3394,"ow":0.0529}}},"C5":{"name":"Employee Empowerment","shortName":"Empowerment","importantIndex":3.1295,"groupWeight":0.1696,"membership":[0.1104,0.1782,0.3,0.2943,0.1171],"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.7114},"rank":5,"factors":{"C51":{"desc":"Empowering employees to take action within authority","mean":3.268,"std":1.153,"membership":[0.0909,0.15,0.3,0.3182,0.1409],"importantIndex":3.2682,"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.7591},"localWeight":0.5233,"ow":0.0915},"C52":{"desc":"Empowering employees to make decisions","mean":2.977,"std":1.172,"membership":[0.1318,0.2091,0.3,0.2682,0.0909],"importantIndex":2.9773,"classification":{"level":"Medium","gradeIndex":3,"cumulativeMembership":0.6591},"localWeight":0.4767,"ow":0.0781}}}},"percentileTable":{"0":2.0447,"1":2.333,"2":2.3717,"3":2.4674,"4":2.5157,"5":2.6471,"6":2.6938,"7":2.7153,"8":2.7607,"9":2.7879,"10":2.8047,"11":2.8986,"12":2.9501,"13":3.0157,"14":3.0604,"15":3.087,"16":3.1235,"17":3.1352,"18":3.1776,"19":3.1904,"20":3.199,"21":3.214,"22":3.2517,"23":3.2992,"24":3.3244,"25":3.3526,"26":3.3636,"27":3.3774,"28":3.3878,"29":3.416,"30":3.4435,"31":3.4689,"32":3.497,"33":3.5208,"34":3.539,"35":3.5458,"36":3.5633,"37":3.5885,"38":3.6,"39":3.6182,"40":3.6264,"41":3.632,"42":3.6493,"43":3.6623,"44":3.6793,"45":3.6972,"46":3.7108,"47":3.7424,"48":3.7468,"49":3.7564,"50":3.7695,"51":3.7846,"52":3.7938,"53":3.808,"54":3.8138,"55":3.8172,"56":3.8332,"57":3.8407,"58":3.848,"59":3.8615,"60":3.8698,"61":3.8739,"62":3.8862,"63":3.9066,"64":3.9343,"65":3.9568,"66":3.9825,"67":3.9993,"68":4.0067,"69":4.0212,"70":4.074,"71":4.0821,"72":4.0953,"73":4.1017,"74":4.1072,"75":4.1117,"76":4.1136,"77":4.1196,"78":4.131,"79":4.1664,"80":4.1934,"81":4.204,"82":4.2186,"83":4.2352,"84":4.2799,"85":4.3064,"86":4.3169,"87":4.3449,"88":4.3825,"89":4.408,"90":4.4476,"91":4.4802,"92":4.5293,"93":4.5988,"94":4.6493,"95":4.6615,"96":4.7274,"97":4.775,"98":4.7974,"99":4.8943,"100":4.9219},"eiHistogram":[{"binStart":2.0,"binEnd":2.25,"count":2,"pct":0.9},{"binStart":2.25,"binEnd":2.5,"count":7,"pct":3.2},{"binStart":2.5,"binEnd":2.75,"count":7,"pct":3.2},{"binStart":2.75,"binEnd":3.0,"count":13,"pct":5.9},{"binStart":3.0,"binEnd":3.25,"count":20,"pct":9.1},{"binStart":3.25,"binEnd":3.5,"count":22,"pct":10.0},{"binStart":3.5,"binEnd":3.75,"count":36,"pct":16.4},{"binStart":3.75,"binEnd":4.0,"count":41,"pct":18.6},{"binStart":4.0,"binEnd":4.25,"count":35,"pct":15.9},{"binStart":4.25,"binEnd":4.5,"count":17,"pct":7.7},{"binStart":4.5,"binEnd":4.75,"count":12,"pct":5.5},{"binStart":4.75,"binEnd":5.0,"count":8,"pct":3.6}],"segmented":{"firmType":{"Construction firms":{"n":113,"overallIndex":3.7665,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6485},"components":{"C1":{"importantIndex":3.8038,"membership":[0.0118,0.0632,0.2646,0.4304,0.2301]},"C2":{"importantIndex":3.8915,"membership":[0.0158,0.0665,0.2326,0.3809,0.3043]},"C3":{"importantIndex":3.7084,"membership":[0.0245,0.0898,0.2671,0.3902,0.2285]},"C4":{"importantIndex":3.8817,"membership":[0.0092,0.0605,0.2066,0.4869,0.2368]},"C5":{"importantIndex":3.2118,"membership":[0.0839,0.1715,0.3006,0.3369,0.1071]}}},"Engineering/design firms":{"n":107,"overallIndex":3.7688,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6463},"components":{"C1":{"importantIndex":3.7517,"membership":[0.0047,0.0941,0.257,0.4329,0.2112]},"C2":{"importantIndex":3.955,"membership":[0.0148,0.0737,0.2104,0.344,0.3572]},"C3":{"importantIndex":3.7103,"membership":[0.0395,0.0986,0.2368,0.3623,0.2628]},"C4":{"importantIndex":3.9536,"membership":[0.0124,0.0709,0.1869,0.4104,0.3194]},"C5":{"importantIndex":3.0437,"membership":[0.1379,0.1852,0.2996,0.2496,0.1276]}}}},"firmSize":{"Large":{"n":91,"overallIndex":3.8141,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6694},"components":{"C1":{"importantIndex":3.81,"membership":[0.011,0.0691,0.2453,0.4477,0.2268]},"C2":{"importantIndex":3.9345,"membership":[0.0132,0.057,0.2294,0.3828,0.3176]},"C3":{"importantIndex":3.8021,"membership":[0.0284,0.0725,0.2495,0.3676,0.2819]},"C4":{"importantIndex":4.0014,"membership":[0.0039,0.0642,0.1523,0.4861,0.2935]},"C5":{"importantIndex":3.1299,"membership":[0.1038,0.1921,0.302,0.2744,0.1277]}}},"Small/medium":{"n":129,"overallIndex":3.7342,"classification":{"level":"High","gradeIndex":4,"cumulativeMembership":0.6318},"components":{"C1":{"importantIndex":3.7564,"membership":[0.0064,0.0847,0.2716,0.4205,0.2167]},"C2":{"importantIndex":3.9149,"membership":[0.0167,0.0787,0.2165,0.3492,0.3389]},"C3":{"importantIndex":3.6423,"membership":[0.0341,0.11,0.2543,0.3828,0.2188]},"C4":{"importantIndex":3.8576,"membership":[0.0155,0.0663,0.2289,0.4236,0.2657]},"C5":{"importantIndex":3.1299,"membership":[0.115,0.1679,0.2987,0.309,0.1094]}}}}},"correlations":{"C1-C2":0.5974,"C1-C3":0.6257,"C1-C4":0.4857,"C1-C5":0.2968,"C2-C3":0.5943,"C2-C4":0.4042,"C2-C5":0.276,"C3-C4":0.5234,"C3-C5":0.2352,"C4-C5":0.102}};
 
 const COMP_KEYS = ["C1","C2","C3","C4","C5"];
-// Sorted component keys by rank for display
 const COMP_RANKED = [...COMP_KEYS].sort((a,b) => B.components[a].rank - B.components[b].rank);
 const COMP_COLORS_MAP = {"C1":"#5B8AEF","C2":"#E8C97A","C3":"#34C77B","C4":"#E8913A","C5":"#E05252"};
 const COMP_ICONS_MAP = {"C1":"\u2665","C2":"\u2733","C3":"\u2699","C4":"\u2696","C5":"\u26A1"};
 const COMP_BG_MAP = {"C1":"rgba(91,138,239,0.15)","C2":"rgba(212,168,83,0.15)","C3":"rgba(52,199,123,0.15)","C4":"rgba(232,145,58,0.15)","C5":"rgba(224,82,82,0.15)"};
 const DIST_COLORS = ["#E05252","#E8913A","#8899B4","#5B8AEF","#34C77B"];
-const DIST_LABELS = ["Very Low","Low","Medium","High","Very High"];
-const COMP_SUBTITLES = {
-  C1: "e.g., trusting colleagues, supporting each other, collaborating willingly",
-  C2: "e.g., encouraging knowledge sharing, innovation, and continuous learning",
-  C3: "e.g., using communication tools, databases, and expert networks effectively",
-  C4: "e.g., having clear written policies that guide daily operations",
-  C5: "e.g., giving employees authority to make decisions and take action",
-};
 
 function getLevel(idx) {
   if (idx >= 4.2) return { text: "Very High", color: "#34C77B" };
@@ -36,11 +361,9 @@ function getPercentile(score) {
   return 0;
 }
 
-function toPercent(score) { return ((score / 5) * 100).toFixed(1); }
-
 // ── Styles ──
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0B1120;--card:#131B2E;--input:#0E1628;--border:#1E2D4A;--accent:#3B6BDB;--accent-l:#5B8AEF;--glow:rgba(59,107,219,0.15);--t1:#E8ECF4;--t2:#8899B4;--t3:#5A6B85;--gold:#D4A853;--gold-l:#E8C97A;--green:#34C77B;--orange:#E8913A;--red:#E05252;--r:12px;--rs:8px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;-webkit-font-smoothing:antialiased;margin:0}
@@ -52,6 +375,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 .hdr h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,44px);font-weight:400;line-height:1.15;margin-bottom:12px;position:relative}
 .hdr h1 span{color:var(--gold)}
 .hdr .sub{color:var(--t2);font-size:clamp(14px,2.5vw,16px);max-width:640px;margin:0 auto}
+.lang-toggle{position:absolute;top:48px;right:0;display:flex;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:3px;z-index:10}
+.lang-btn{padding:6px 14px;border-radius:100px;border:none;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;background:transparent;color:var(--t3);letter-spacing:.5px}
+.lang-btn.active{background:var(--accent);color:#fff}
+.lang-btn:hover:not(.active){color:var(--t1)}
 .stepper{display:flex;align-items:center;justify-content:center;margin:32px auto 36px;max-width:680px;padding:0 8px}
 .step-item{display:flex;align-items:center;flex:1}
 .sc{width:36px;height:36px;min-width:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--t3);background:var(--card);transition:all .3s;position:relative;z-index:1}
@@ -92,14 +419,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 .bleg{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:16px}
 .cr{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
 .cr:last-child{border-bottom:none}
-.seg-sel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.seg-btn{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.seg-btn:hover{border-color:var(--t2);color:var(--t1)}
-.seg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.seg-grp{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.seg-tag{padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.seg-tag:hover{border-color:var(--gold);color:var(--gold)}
-.seg-tag.active{background:rgba(212,168,83,0.15);border-color:var(--gold);color:var(--gold)}
 .hist-outer{position:relative;padding:0 0 28px}
 .hist-wrap{display:flex;align-items:flex-end;gap:2px;height:120px;padding:0;margin-left:32px}
 .hist-bar{flex:1;border-radius:3px 3px 0 0;transition:height .6s ease;position:relative;min-width:0;background:var(--accent)}
@@ -122,10 +441,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 @keyframes sp{to{transform:rotate(360deg)}}
 .rec-disclaimer{text-align:right;font-size:11px;color:var(--t3);margin-top:16px;font-style:italic}
 footer{text-align:center;padding:40px 20px;font-size:12px;color:var(--t3);border-top:1px solid var(--border);margin-top:48px}
-@media(max-width:640px){.hdr{padding:32px 0 20px}.card{padding:20px 16px}.rb{width:48px}.rl{width:262px}.big-pct{font-size:56px}.btn{padding:14px 20px;font-size:14px}.sc{width:30px;height:30px;min-width:30px;font-size:12px}.pctl-num{font-size:32px}.hist-wrap{height:80px}}
+@media(max-width:640px){.hdr{padding:32px 0 20px}.card{padding:20px 16px}.rb{width:48px}.rl{width:262px}.big-pct{font-size:56px}.btn{padding:14px 20px;font-size:14px}.sc{width:30px;height:30px;min-width:30px;font-size:12px}.pctl-num{font-size:32px}.hist-wrap{height:80px}.lang-toggle{position:relative;top:0;right:0;margin:0 auto 16px;justify-content:center}}
+.app[data-lang="vi"]{font-family:'Be Vietnam Pro',sans-serif}
+.app[data-lang="vi"] .hdr h1{font-family:'Be Vietnam Pro',sans-serif;font-weight:700}
+.app[data-lang="vi"] .ch h2{font-family:'Be Vietnam Pro',sans-serif;font-weight:700}
+.app[data-lang="vi"] .big-pct{font-family:'Be Vietnam Pro',sans-serif;font-weight:700}
+.app[data-lang="vi"] .pctl-num{font-family:'Be Vietnam Pro',sans-serif;font-weight:700}
+.app[data-lang="vi"] .btn{font-family:'Be Vietnam Pro',sans-serif}
+.app[data-lang="vi"] .rb{font-family:'Be Vietnam Pro',sans-serif}
+.app[data-lang="vi"] .lang-btn{font-family:'Be Vietnam Pro',sans-serif}
+
 `;
 
 // ── Sub-components ──
+
+function LanguageToggle({ lang, setLang }) {
+  return (
+    <div className="lang-toggle">
+      <button className={`lang-btn ${lang === "en" ? "active" : ""}`} onClick={() => setLang("en")}>EN</button>
+      <button className={`lang-btn ${lang === "vi" ? "active" : ""}`} onClick={() => setLang("vi")}>VI</button>
+    </div>
+  );
+}
 
 function Stepper({ current }) {
   const steps = [0,1,2,3,4,5];
@@ -143,7 +480,7 @@ function Stepper({ current }) {
   );
 }
 
-function ComponentCard({ compKey, compIdx, ratings, onRate }) {
+function ComponentCard({ compKey, ratings, onRate, t }) {
   const comp = B.components[compKey];
   const factors = Object.entries(comp.factors);
   return (
@@ -151,19 +488,19 @@ function ComponentCard({ compKey, compIdx, ratings, onRate }) {
       <div className="ch">
         <div className="ci" style={{background:COMP_BG_MAP[compKey],color:COMP_COLORS_MAP[compKey]}}>{COMP_ICONS_MAP[compKey]}</div>
         <div>
-          <h2>{comp.name}</h2>
-          <p>Rate each factor from 1 (Very Low) to 5 (Very High)</p>
+          <h2>{t.compNames[compKey]}</h2>
+          <p>{t.rateInstruction}</p>
         </div>
       </div>
-      {factors.map(([code, f]) => (
+      {factors.map(([code]) => (
         <div className="fr" key={code}>
-          <div className="fd">{f.desc}</div>
+          <div className="fd">{t.factors[code]}</div>
           <div className="rg">
             {[1,2,3,4,5].map(v => (
               <button key={v} className={`rb ${ratings[code]===v?"sel":""}`} onClick={()=>onRate(code,v)}>{v}</button>
             ))}
           </div>
-          <div className="rl"><span>Very Low</span><span>Very High</span></div>
+          <div className="rl"><span>{t.veryLow}</span><span>{t.veryHigh}</span></div>
         </div>
       ))}
     </div>
@@ -210,26 +547,24 @@ function IndexHistogram({ userScore }) {
   );
 }
 
-
-
-function SegmentComparison({ compScores, userScore }) {
+function SegmentComparison({ compScores, userScore, t }) {
   const [segType, setSegType] = useState("all");
   const [segGroup, setSegGroup] = useState(null);
   const [hovered, setHovered] = useState(null);
 
   const segOptions = {
-    firmType: { label: "Firm Type", groups: Object.keys(B.segmented.firmType) },
-    firmSize: { label: "Firm Size", groups: Object.keys(B.segmented.firmSize) },
+    firmType: { label: t.firmType, groups: Object.keys(B.segmented.firmType) },
+    firmSize: { label: t.firmSize, groups: Object.keys(B.segmented.firmSize) },
   };
 
-  let peerLabel = "All Firms";
+  let peerLabel = t.allFirms;
   let peerN = B.overall.n;
   let peerComponents = {};
   COMP_KEYS.forEach(k => { peerComponents[k] = { importantIndex: B.components[k].importantIndex }; });
 
   if (segType !== "all" && segGroup && B.segmented[segType]?.[segGroup]) {
     const sd = B.segmented[segType][segGroup];
-    peerLabel = segGroup;
+    peerLabel = t.segGroups[segGroup] || segGroup;
     peerN = sd.n;
     peerComponents = sd.components;
   }
@@ -252,17 +587,9 @@ function SegmentComparison({ compScores, userScore }) {
   const peerVals = COMP_RANKED.map(k => peerComponents[k].importantIndex);
   const gridLevels = [1, 2, 3, 4, 5];
 
-  const fullNames = {
-    C1: "Mutual Trust &\nCollaboration",
-    C2: "Organizational\nValues & Norms",
-    C3: "Information &\nComm Systems",
-    C4: "Organizational\nPolicies",
-    C5: "Employee\nEmpowerment",
-  };
-
   return (
     <div className="card">
-      <div className="ch"><div><h2>KMIC Profile & Peer Comparison</h2><p>Your organization's profile compared against peer groups</p></div></div>
+      <div className="ch"><div><h2>{t.profileTitle}</h2><p>{t.profileDesc}</p></div></div>
 
       <div style={{display:"flex",gap:0,marginBottom:16,background:"var(--input)",borderRadius:8,padding:3,border:"1px solid var(--border)"}}>
         <button
@@ -273,7 +600,7 @@ function SegmentComparison({ compScores, userScore }) {
             background: segType==="all" ? "var(--accent)" : "transparent",
             color: segType==="all" ? "#fff" : "var(--t2)",
           }}>
-          All Firms (n={B.overall.n})
+          {t.allFirms} (n={B.overall.n})
         </button>
         {Object.entries(segOptions).map(([key, opt]) => (
           <button key={key}
@@ -303,14 +630,14 @@ function SegmentComparison({ compScores, userScore }) {
                   color: isActive ? "var(--gold)" : "var(--t2)",
                   fontSize:13,fontWeight:600,fontFamily:"DM Sans,sans-serif",cursor:"pointer",transition:"all .2s",
                 }}>
-                {g} <span style={{opacity:0.6,fontWeight:400}}>(n={gn})</span>
+                {t.segGroups[g] || g} <span style={{opacity:0.6,fontWeight:400}}>(n={gn})</span>
               </button>
             );
           })}
         </div>
       )}
       {segType !== "all" && !segGroup && (
-        <p style={{color:"var(--t3)",fontSize:12,textAlign:"center",marginBottom:12}}>Select a group above, or viewing all firms by default</p>
+        <p style={{color:"var(--t3)",fontSize:12,textAlign:"center",marginBottom:12}}>{t.selectGroupHint}</p>
       )}
 
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:24}}>
@@ -366,7 +693,6 @@ function SegmentComparison({ compScores, userScore }) {
             filter="url(#glow-g)"/>
 
           {COMP_RANKED.map((cKey, i) => {
-            const comp = B.components[cKey];
             const uPt = ptAt(i, userVals[i]);
             const pPt = ptAt(i, peerVals[i]);
             const isH = hovered === cKey;
@@ -380,7 +706,7 @@ function SegmentComparison({ compScores, userScore }) {
             const anchor = Math.abs(Math.cos(a)) < 0.15 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
             const lyOffset = Math.abs(Math.sin(a)) > 0.8 ? (Math.sin(a) > 0 ? 10 : -10) : 0;
 
-            const nameLines = fullNames[cKey].split("\n");
+            const nameLines = (t.compRadarNames[cKey] || "").split("\n");
 
             return (
               <g key={cKey}
@@ -406,7 +732,7 @@ function SegmentComparison({ compScores, userScore }) {
                   fill={delta > 0 ? "#34C77B" : delta < 0 ? "#E05252" : "#5A6B85"}
                   fontSize="10" fontWeight="600"
                   textAnchor={anchor} dominantBaseline="central">
-                  {Math.abs(deltaPct).toFixed(0)}% {delta >= 0 ? "higher" : "lower"} than peers
+                  {Math.abs(deltaPct).toFixed(0)}% {delta >= 0 ? t.higherThanPeers : t.lowerThanPeers}
                 </text>
               </g>
             );
@@ -419,11 +745,11 @@ function SegmentComparison({ compScores, userScore }) {
         <div style={{display:"flex",gap:24,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
             <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#D4A853" strokeWidth="2.5"/></svg>
-            Your organization
+            {t.yourOrg}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
             <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#5B8AEF" strokeWidth="2" strokeDasharray="4 3"/></svg>
-            Peer benchmark
+            {t.peerBenchmark}
           </div>
         </div>
       </div>
@@ -431,7 +757,7 @@ function SegmentComparison({ compScores, userScore }) {
   );
 }
 
-function Recommendations({ ratings }) {
+function Recommendations({ ratings, t, lang }) {
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -439,29 +765,32 @@ function Recommendations({ ratings }) {
   const generate = async () => {
     setLoading(true); setOutput(null); setError(null);
 
-    // Build score summary for the prompt using plain names only (no codes)
     let summary = "";
-    const compScores = {};
-    let total = 0;
-
     COMP_KEYS.forEach(cKey => {
       const comp = B.components[cKey];
       let cs = 0;
       const factorLines = [];
       Object.entries(comp.factors).forEach(([code, f]) => {
         const r = ratings[code] || 0;
-        total += f.ow * r;
         cs += (f.ow / comp.groupWeight) * r;
         const diff = r - Math.round(f.mean);
         const diffLabel = diff > 0 ? `${diff} above avg` : diff < 0 ? `${Math.abs(diff)} below avg` : "at avg";
         factorLines.push(`  "${f.desc}": rated ${r}/5 (industry avg: ${f.mean.toFixed(1)}, ${diffLabel})`);
       });
-      compScores[cKey] = cs;
+      let total = 0;
+      Object.entries(comp.factors).forEach(([code, f]) => { total += f.ow * (ratings[code]||0); });
       const delta = cs - comp.importantIndex;
       const pct = comp.importantIndex > 0 ? ((delta / comp.importantIndex) * 100).toFixed(1) : "0";
       summary += `${comp.name} -- firm score: ${cs.toFixed(2)}, industry benchmark: ${comp.importantIndex.toFixed(2)} (${delta >= 0 ? "+" : ""}${pct}% vs benchmark)\n`;
       factorLines.forEach(l => { summary += l + "\n"; });
       summary += "\n";
+    });
+
+    let kmicIndex = 0;
+    COMP_KEYS.forEach(cKey => {
+      Object.entries(B.components[cKey].factors).forEach(([code, f]) => {
+        kmicIndex += f.ow * (ratings[code]||0);
+      });
     });
 
     const prompt = `You are a knowledge management advisor writing practical recommendations for an architecture, engineering, and construction (A/E/C) firm in a developing country.
@@ -478,7 +807,7 @@ Industry-wide, employee empowerment is the weakest area due to centralized hiera
 
 THIS FIRM'S RESULTS:
 ${summary}
-Overall KMIC Index: ${total.toFixed(3)} out of 5.0 (industry benchmark: ${B.overall.index})
+Overall KMIC Index: ${kmicIndex.toFixed(3)} out of 5.0 (industry benchmark: ${B.overall.index})
 
 WRITING RULES (follow strictly):
 - NEVER use codes like C1, C2, C3, C11, C22, C33, C41, C51, etc. Always use the plain name (e.g., "employee empowerment" not "C5", "trust in colleagues" not "C11").
@@ -495,7 +824,7 @@ FORMAT:
    - Prioritize the weakest areas first
 3. End with one sentence noting the firm's strongest area as a strength to maintain (only if it is clearly above benchmark).
 
-Total output must be under 200 words. Be direct. No fluff.`;
+Total output must be under 200 words. Be direct. No fluff.${t.aiLangInstruction}`;
 
     try {
       const resp = await fetch("/api/recommend", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({prompt}) });
@@ -507,7 +836,7 @@ Total output must be under 200 words. Be direct. No fluff.`;
 
   useEffect(() => { generate(); }, []);
 
-  const fmt = t => t
+  const fmt = text => text
     .replace(/### (.*)/g,"<h4>$1</h4>")
     .replace(/## (.*)/g,"<h4>$1</h4>")
     .replace(/# (.*)/g,"<h4>$1</h4>")
@@ -524,23 +853,23 @@ Total output must be under 200 words. Be direct. No fluff.`;
     <div className="card">
       <div className="ch">
         <div>
-          <h2>Recommendations</h2>
+          <h2>{t.recTitle}</h2>
         </div>
       </div>
 
       {loading ? (
-        <div className="ai-ld"><div className="spin"/>Analyzing your profile...</div>
+        <div className="ai-ld"><div className="spin"/>{t.recAnalyzing}</div>
       ) : error ? (
         <div>
           <p style={{color:"var(--red)",marginBottom:12}}>{error}</p>
-          <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Try Again</button>
+          <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{t.recTryAgain}</button>
         </div>
       ) : output ? (
         <div>
           <div className="rec-text" dangerouslySetInnerHTML={{__html:fmt(output)}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,paddingTop:12,borderTop:"1px solid var(--border)"}}>
-            <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{"\u21BB"} Regenerate</button>
-            <span className="rec-disclaimer">Recommendation synthesis assisted by Gemini 2.5 Flash Lite</span>
+            <button className="btn btn-s" style={{padding:"8px 16px",fontSize:12}} onClick={generate}>{t.recRegenerate}</button>
+            <span className="rec-disclaimer">{t.recDisclaimer}</span>
           </div>
         </div>
       ) : null}
@@ -548,7 +877,7 @@ Total output must be under 200 words. Be direct. No fluff.`;
   );
 }
 
-function ResultsSection({ ratings, onReset }) {
+function ResultsSection({ ratings, onReset, t, lang }) {
   const [animPct, setAnimPct] = useState(0);
 
   const compScores = {};
@@ -582,19 +911,19 @@ function ResultsSection({ ratings, onReset }) {
       {/* Score Hero */}
       <div className="card">
         <div className="hero">
-          <div className="slbl">Your Organization's KMIC Index</div>
+          <div className="slbl">{t.yourOrgIndex}</div>
           <div className="big-pct">{animPct.toFixed(1)}%</div>
-          <div className="big-raw">Score: {kmicIndex.toFixed(3)} on a 1 to 5 scale</div>
-          <div className="lvl" style={{background:level.color}}>{level.text}</div>
+          <div className="big-raw">{t.scoreLabel(kmicIndex.toFixed(3))}</div>
+          <div className="lvl" style={{background:level.color}}>{t.levels[level.text] || level.text}</div>
         </div>
 
         <div className="pctl">
           <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6}}>
             <span className="pctl-num">{percentile}<sup style={{fontSize:16,verticalAlign:"super"}}>{percentile===1?"st":percentile===2?"nd":percentile===3?"rd":"th"}</sup></span>
-            <span style={{fontSize:16,color:"var(--t2)",fontWeight:500}}>percentile</span>
+            <span style={{fontSize:16,color:"var(--t2)",fontWeight:500}}>{t.percentile}</span>
           </div>
           <div className="pctl-lbl">
-            Your score is higher than {percentile}% of the {B.overall.n} surveyed A/E/C firms
+            {t.percentileDesc(percentile, B.overall.n)}
           </div>
         </div>
 
@@ -602,31 +931,31 @@ function ResultsSection({ ratings, onReset }) {
           <div className="bbar">
             <div className="bfill" style={{width:`${((kmicIndex - 1) / 4) * 100}%`}}/>
             <div className="bmk" style={{left:`${((B.overall.index - 1) / 4) * 100}%`}}>
-              <div className="bmkl">Survey avg: {B.overall.index}</div>
+              <div className="bmkl">{t.surveyAvg(B.overall.index)}</div>
             </div>
           </div>
-          <div className="bleg"><span>1.0 Very Low</span><span>3.0 Moderate</span><span>5.0 Very High</span></div>
+          <div className="bleg"><span>{t.veryLowScale}</span><span>{t.moderateScale}</span><span>{t.veryHighScale}</span></div>
         </div>
       </div>
 
       {/* Distribution histogram */}
       <div className="card">
-        <div className="ch"><div><h2>Where You Stand</h2><p>Distribution of KMIC Index scores across {B.overall.n} surveyed organizations</p></div></div>
+        <div className="ch"><div><h2>{t.whereYouStand}</h2><p>{t.whereYouStandDesc(B.overall.n)}</p></div></div>
         <IndexHistogram userScore={kmicIndex}/>
       </div>
 
       {/* Component Breakdown */}
       <div className="card">
-        <div className="ch"><div><h2>Component Breakdown</h2><p>How your organization compares across five KMIC dimensions</p></div></div>
+        <div className="ch"><div><h2>{t.componentBreakdown}</h2><p>{t.componentBreakdownDesc}</p></div></div>
 
         <div style={{background:"var(--input)",border:"1px solid var(--border)",borderRadius:6,padding:16,marginBottom:20,fontSize:12,lineHeight:1.8,color:"var(--t2)"}}>
-          <strong style={{color:"var(--gold)",fontSize:13}}>Powered by Fuzzy Synthetic Evaluation (FSE)</strong>
+          <strong style={{color:"var(--gold)",fontSize:13}}>{t.fseTitle}</strong>
           <br/>
-          Unlike simple averaging, this analysis uses the FSE method to capture the full picture of how {B.overall.n} surveyed firms actually responded. Instead of reducing everything to a single number, the colored bar below shows the distribution of responses across five levels (Very Low to Very High), so you can see where most firms cluster and how spread out the opinions are. Your firm's category is highlighted in full color. The scale bar underneath shows your exact score (gold dot) compared to the survey average (gray line) on a 1 to 5 scale.
+          {t.fseDesc(B.overall.n)}
         </div>
 
         <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20,justifyContent:"center"}}>
-          {DIST_LABELS.map((l,i) => (
+          {t.distLabels.map((l,i) => (
             <div key={l} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--t2)"}}>
               <span style={{width:10,height:10,borderRadius:2,background:DIST_COLORS[i],display:"inline-block",flexShrink:0}}/>{l}
             </div>
@@ -643,7 +972,7 @@ function ResultsSection({ ratings, onReset }) {
 
           const userGrade = Math.round(Math.max(1, Math.min(5, userVal)));
           const activeIdx = userGrade - 1;
-          const activeLabel = DIST_LABELS[activeIdx];
+          const activeLabel = t.distLabels[activeIdx];
           const activePct = (mem[activeIdx] * 100).toFixed(0);
 
           const userLinear = ((userVal - 1) / 4) * 100;
@@ -653,14 +982,13 @@ function ResultsSection({ ratings, onReset }) {
             <div key={cKey} style={{paddingBottom:isLast?0:24,marginBottom:isLast?0:24,borderBottom:isLast?"none":"1px solid var(--border)"}}>
               <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:"var(--t3)",fontWeight:600}}>#{bench.rank}</span>
-                <span style={{fontSize:14,fontWeight:600,color:"var(--t1)"}}>{bench.name}</span>
-                <span style={{fontSize:12,color:"var(--t3)"}}>({COMP_SUBTITLES[cKey]})</span>
+                <span style={{fontSize:14,fontWeight:600,color:"var(--t1)"}}>{t.compNames[cKey]}</span>
+                <span style={{fontSize:12,color:"var(--t3)"}}>({t.compSubtitles[cKey]})</span>
               </div>
 
               <div style={{marginLeft:22}}>
-                <div style={{fontSize:12,color:"var(--t1)",marginBottom:4}}>
-                  Your firm is in the <span style={{fontWeight:700,color:DIST_COLORS[activeIdx]}}>{activeLabel}</span> category <span style={{color:"var(--t3)"}}>({activePct}% of firms are also in this group)</span>
-                </div>
+                <div style={{fontSize:12,color:"var(--t1)",marginBottom:4}}
+                  dangerouslySetInnerHTML={{__html: t.yourFirmInCategory(activeLabel, activePct)}}/>
 
                 <div style={{position:"relative"}}>
                   {(() => {
@@ -676,7 +1004,7 @@ function ResultsSection({ ratings, onReset }) {
                   <div style={{display:"flex",height:28,borderRadius:4,overflow:"hidden",position:"relative",marginTop:10}}>
                     {mem.map((m, i) => (
                     <div key={i}
-                      title={`${DIST_LABELS[i]}: ${(m*100).toFixed(1)}% of surveyed firms`}
+                      title={`${t.distLabels[i]}: ${(m*100).toFixed(1)}%`}
                       style={{
                         width:`${m*100}%`,
                         background:DIST_COLORS[i],
@@ -705,12 +1033,12 @@ function ResultsSection({ ratings, onReset }) {
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
                     <div style={{fontSize:12,color:"var(--t2)"}}>
-                      Your score: <span style={{fontWeight:700,color:"var(--gold)"}}>{userVal.toFixed(2)}</span>
+                      {t.yourScore} <span style={{fontWeight:700,color:"var(--gold)"}}>{userVal.toFixed(2)}</span>
                     </div>
                     <div style={{fontSize:12,color:"var(--t2)"}}>
-                      Benchmark: <span style={{fontWeight:600,color:"var(--accent-l)"}}>{bench.importantIndex.toFixed(2)}</span>
+                      {t.benchmark} <span style={{fontWeight:600,color:"var(--accent-l)"}}>{bench.importantIndex.toFixed(2)}</span>
                       <span style={{marginLeft:4,fontWeight:600,color:delta>0?"var(--green)":delta<0?"var(--red)":"var(--t3)"}}>
-                        ({Math.abs(deltaPct).toFixed(0)}% {delta>=0?"above":"below"} typical)
+                        ({delta >= 0 ? t.aboveTypical(Math.abs(deltaPct).toFixed(0)) : t.belowTypical(Math.abs(deltaPct).toFixed(0))})
                       </span>
                     </div>
                   </div>
@@ -722,45 +1050,28 @@ function ResultsSection({ ratings, onReset }) {
       </div>
 
       {/* Peer comparison */}
-      <SegmentComparison compScores={compScores} userScore={kmicIndex}/>
+      <SegmentComparison compScores={compScores} userScore={kmicIndex} t={t}/>
 
       {/* Methodology */}
       <div className="card">
-        <div className="ch"><div><h2>How This Was Calculated</h2><p>A brief overview of the methods behind your scores</p></div></div>
+        <div className="ch"><div><h2>{t.methodTitle}</h2><p>{t.methodDesc}</p></div></div>
         <div className="method-box">
-          <h4>Fuzzy Synthetic Evaluation (FSE)</h4>
-          Your scores are computed using the FSE approach, a multi-criteria evaluation technique designed
-          for situations where subjective assessments need to be aggregated into quantitative indexes. Rather
-          than treating Likert-scale ratings as simple averages, FSE preserves the full distribution of
-          responses through membership functions, which capture the proportion of respondents at each
-          rating level. These membership functions are then combined using derived weightings to produce
-          component-level and overall KMIC indexes.
-          <h4>KMIC Index Formula</h4>
-          Your KMIC Index is calculated as KMIC = &Sigma;(OW<sub>ij</sub> &times; RS<sub>ij</sub>),
-          where OW<sub>ij</sub> is the overall weight of each factor (derived from CFA factor loadings and
-          FSE group weights) and RS<sub>ij</sub> is your rating score. This integrates both statistical
-          importance and empirical weighting from {B.overall.n} survey respondents.
-          <h4>Classification: Confidence Criterion</h4>
-          Each score is classified into a level (Very Low through Very High) using the confidence criterion
-          with lambda = 0.5. This method accumulates membership from the highest grade downward until the
-          cumulative value reaches 50%. The grade where this threshold is crossed determines the
-          classification. This is more robust than the simpler maximum membership principle because it
-          avoids edge cases where the top grade barely leads. This approach follows established FSE
-          literature (Xu et al., 2010; Osei-Kyei and Chan, 2017).
-          <h4>Benchmark Data</h4>
-          All benchmarks come from a survey of {B.overall.n} A/E/C practitioners in Vietnam, validated
-          through confirmatory factor analysis (CFA) with strong construct reliability (CR &gt; 0.7,
-          AVE &gt; 0.5 for most components). The Mann-Whitney U test confirmed that KMIC factors are
-          consistent across firm types and sizes (p &gt; 0.05), supporting the benchmark's broad
-          applicability within the A/E/C sector.
+          <h4>{t.methodFSETitle}</h4>
+          {t.methodFSEBody(B.overall.n)}
+          <h4>{t.methodFormulaTitle}</h4>
+          <span dangerouslySetInnerHTML={{__html: t.methodFormulaBody(B.overall.n)}}/>
+          <h4>{t.methodClassTitle}</h4>
+          {t.methodClassBody}
+          <h4>{t.methodBenchTitle}</h4>
+          {t.methodBenchBody(B.overall.n)}
         </div>
       </div>
 
       {/* Recommendations */}
-      <Recommendations ratings={ratings}/>
+      <Recommendations ratings={ratings} t={t} lang={lang}/>
 
       <div className="br" style={{marginBottom:40}}>
-        <button className="btn btn-s" onClick={onReset}>{"\u21BA"} Start Over</button>
+        <button className="btn btn-s" onClick={onReset}>{t.startOver}</button>
       </div>
     </div>
   );
@@ -770,6 +1081,9 @@ function ResultsSection({ ratings, onReset }) {
 export default function KMICApp() {
   const [step, setStep] = useState(0);
   const [ratings, setRatings] = useState({});
+  const [lang, setLang] = useState("en");
+
+  const t = T[lang];
 
   const handleRate = (code, val) => setRatings(p => ({...p,[code]:val}));
   const isComplete = si => {
@@ -784,38 +1098,39 @@ export default function KMICApp() {
   return (
     <>
       <style>{css}</style>
-      <div className="app">
+      <div className="app" data-lang={lang}>
         <header className="hdr">
-          <div className="badge"><span className="dot"/> KMIC Assessment</div>
-          <h1>Knowledge Management<br/>Infrastructure <span>Capability</span></h1>
+          <LanguageToggle lang={lang} setLang={setLang}/>
+          <div className="badge"><span className="dot"/> {t.badge}</div>
+          <h1>{t.headerTitle1}<br/>{t.headerTitle2} <span>{t.headerTitle3}</span></h1>
           <p className="sub">
-            How well does your organization create, share, and apply knowledge? Rate five key dimensions and benchmark against {B.overall.n} architecture, engineering, and construction (A/E/C) firms using the Fuzzy Synthetic Evaluation (FSE) based KMIC Index model.
+            {t.headerSub(B.overall.n)}
           </p>
           <div style={{marginTop:16,padding:"12px 20px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,maxWidth:600,marginLeft:"auto",marginRight:"auto",fontSize:13,color:"var(--t2)",lineHeight:1.7,textAlign:"left"}}>
-            <strong style={{color:"var(--gold)"}}>What is the KMIC Index?</strong> It measures how ready your organization's foundation is to support knowledge management, covering five areas: trust and collaboration among employees, organizational culture and values, information systems, written policies, and employee empowerment. A higher score (closer to 5) means stronger foundational capability for creating, sharing, and applying knowledge effectively.
+            <strong style={{color:"var(--gold)"}}>{t.whatIsTitle}</strong> {t.whatIsBody}
           </div>
         </header>
         <Stepper current={step}/>
         {step<5 && (
           <div key={step}>
-            <ComponentCard compKey={COMP_KEYS[step]} compIdx={step} ratings={ratings} onRate={handleRate}/>
+            <ComponentCard compKey={COMP_KEYS[step]} ratings={ratings} onRate={handleRate} t={t}/>
             <div className="br">
-              {step>0&&<button className="btn btn-s" onClick={goBack}>{"\u2190"} Back</button>}
+              {step>0&&<button className="btn btn-s" onClick={goBack}>{t.back}</button>}
               {step<4 ? (
                 <button className="btn btn-p" disabled={!isComplete(step)} onClick={goNext}>
-                  Next: {B.components[COMP_KEYS[step+1]].shortName} {"\u2192"}
+                  {t.nextPrefix} {t.compShortNames[COMP_KEYS[step+1]]} {"\u2192"}
                 </button>
               ) : (
                 <button className="btn btn-g" disabled={!isComplete(step)} onClick={goNext}>
-                  {"\u2733"} Calculate KMIC Index
+                  {t.calculate}
                 </button>
               )}
             </div>
           </div>
         )}
-        {step===5 && <ResultsSection ratings={ratings} onReset={reset}/>}
+        {step===5 && <ResultsSection ratings={ratings} onReset={reset} t={t} lang={lang}/>}
         <footer>
-          <p>This tool accompanies a manuscript currently under peer review. Source code is available at <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style={{color:"var(--accent-l)",textDecoration:"none"}}>github.com/ac5907846/kmic</a>. Full methodological details and citation information will be provided upon publication.</p>
+          <p dangerouslySetInnerHTML={{__html: t.footerText}}/>
         </footer>
       </div>
     </>
