@@ -815,8 +815,7 @@ export default function KMICApp() {
         )}
         {step===5 && <ResultsSection ratings={ratings} onReset={reset}/>}
         <footer>
-          <p>KMIC Assessment Tool -- Based on the FSE-based KMIC Index model for architecture, engineering, and construction organizations</p>
-          <p style={{marginTop:4}}>Classification: Confidence criterion (lambda=0.5) per Xu et al. (2010) and Osei-Kyei and Chan (2017)</p>
+          <p>This tool accompanies a manuscript currently under peer review. Source code is available at <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style={{color:"var(--accent-l)",textDecoration:"none"}}>github.com/ac5907846/kmic</a>. Full methodological details and citation information will be provided upon publication.</p>
         </footer>
       </div>
     </>
