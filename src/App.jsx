@@ -97,7 +97,7 @@ const T = {
 
     // Footer
     footerText:
-      'This tool accompanies a manuscript currently under peer review. Source code is available at <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent-l);text-decoration:none">github.com/ac5907846/kmic</a>. Full methodological details and citation information will be provided upon publication.',
+      'This tool accompanies a manuscript currently under peer review. Source code is available at <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none">github.com/ac5907846/kmic</a>. Full methodological details and citation information will be provided upon publication.',
 
     // Segment group labels
     segGroups: {
@@ -260,7 +260,7 @@ const T = {
       "Tổng hợp khuyến nghị được hỗ trợ bởi Gemini 2.5 Flash Lite",
 
     footerText:
-      'Công cụ này đi kèm với bản thảo đang trong quá trình bình duyệt. Mã nguồn có sẵn tại <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent-l);text-decoration:none">github.com/ac5907846/kmic</a>. Chi tiết phương pháp luận và thông tin trích dẫn đầy đủ sẽ được cung cấp khi công bố.',
+      'Công cụ này đi kèm với bản thảo đang trong quá trình bình duyệt. Mã nguồn có sẵn tại <a href="https://github.com/ac5907846/kmic" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none">github.com/ac5907846/kmic</a>. Chi tiết phương pháp luận và thông tin trích dẫn đầy đủ sẽ được cung cấp khi công bố.',
 
     segGroups: {
       "Construction firms": "Doanh nghiệp Xây dựng",
@@ -339,17 +339,17 @@ const B = {"overall":{"index":3.7663,"membership":[0.0241,0.0861,0.2428,0.3933,0
 
 const COMP_KEYS = ["C1","C2","C3","C4","C5"];
 const COMP_RANKED = [...COMP_KEYS].sort((a,b) => B.components[a].rank - B.components[b].rank);
-const COMP_COLORS_MAP = {"C1":"#5B8AEF","C2":"#E8C97A","C3":"#34C77B","C4":"#E8913A","C5":"#E05252"};
+const COMP_COLORS_MAP = {"C1":"#3B6BDB","C2":"#B8922E","C3":"#1E9960","C4":"#CC7A2E","C5":"#CC3E3E"};
 const COMP_ICONS_MAP = {"C1":"\u2665","C2":"\u2733","C3":"\u2699","C4":"\u2696","C5":"\u26A1"};
-const COMP_BG_MAP = {"C1":"rgba(91,138,239,0.15)","C2":"rgba(212,168,83,0.15)","C3":"rgba(52,199,123,0.15)","C4":"rgba(232,145,58,0.15)","C5":"rgba(224,82,82,0.15)"};
-const DIST_COLORS = ["#E05252","#E8913A","#8899B4","#5B8AEF","#34C77B"];
+const COMP_BG_MAP = {"C1":"rgba(59,107,219,0.12)","C2":"rgba(184,146,46,0.12)","C3":"rgba(30,153,96,0.12)","C4":"rgba(204,122,46,0.12)","C5":"rgba(204,62,62,0.12)"};
+const DIST_COLORS = ["#CC3E3E","#CC7A2E","#7A8BA2","#3B6BDB","#1E9960"];
 
 function getLevel(idx) {
-  if (idx >= 4.2) return { text: "Very High", color: "#34C77B" };
-  if (idx >= 3.4) return { text: "High", color: "#5B8AEF" };
-  if (idx >= 2.6) return { text: "Moderate", color: "#E8913A" };
-  if (idx >= 1.8) return { text: "Low", color: "#E05252" };
-  return { text: "Very Low", color: "#E05252" };
+  if (idx >= 4.2) return { text: "Very High", color: "#1E9960" };
+  if (idx >= 3.4) return { text: "High", color: "#3B6BDB" };
+  if (idx >= 2.6) return { text: "Moderate", color: "#CC7A2E" };
+  if (idx >= 1.8) return { text: "Low", color: "#CC3E3E" };
+  return { text: "Very Low", color: "#CC3E3E" };
 }
 
 function getPercentile(score) {
@@ -365,17 +365,17 @@ function getPercentile(score) {
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0B1120;--card:#131B2E;--input:#0E1628;--border:#1E2D4A;--accent:#3B6BDB;--accent-l:#5B8AEF;--glow:rgba(59,107,219,0.15);--t1:#E8ECF4;--t2:#8899B4;--t3:#5A6B85;--gold:#D4A853;--gold-l:#E8C97A;--green:#34C77B;--orange:#E8913A;--red:#E05252;--r:12px;--rs:8px}
+:root{--bg:#F0F2F7;--card:#FFFFFF;--input:#E8EBF2;--border:#D0D5E0;--accent:#3B6BDB;--accent-l:#4A7AE8;--glow:rgba(59,107,219,0.08);--t1:#1A2438;--t2:#4A5568;--t3:#7A8599;--gold:#996E1A;--gold-l:#B8922E;--green:#1E9960;--orange:#CC7A2E;--red:#CC3E3E;--r:12px;--rs:8px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;-webkit-font-smoothing:antialiased;margin:0}
 .app{max-width:960px;margin:0 auto;padding:0 20px 60px}
 .hdr{padding:48px 0 32px;text-align:center;position:relative;overflow:hidden}
 .hdr::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--glow) 0%,transparent 70%);pointer-events:none}
-.badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 16px 6px 8px;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 16px 6px 8px;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .badge .dot{width:8px;height:8px;background:var(--gold);border-radius:50%}
 .hdr h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,44px);font-weight:400;line-height:1.15;margin-bottom:12px;position:relative}
 .hdr h1 span{color:var(--gold)}
 .hdr .sub{color:var(--t2);font-size:clamp(14px,2.5vw,16px);max-width:640px;margin:0 auto}
-.lang-toggle{position:absolute;top:48px;right:0;display:flex;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:3px;z-index:10}
+.lang-toggle{position:absolute;top:48px;right:0;display:flex;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:3px;z-index:10;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .lang-btn{padding:6px 14px;border-radius:100px;border:none;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;background:transparent;color:var(--t3);letter-spacing:.5px}
 .lang-btn.active{background:var(--accent);color:#fff}
 .lang-btn:hover:not(.active){color:var(--t1)}
@@ -385,7 +385,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 .sc.active{border-color:var(--accent);color:#fff;background:var(--accent);box-shadow:0 0 20px var(--glow)}
 .sc.done{border-color:var(--green);color:#fff;background:var(--green)}
 .sl{flex:1;height:2px;background:var(--border);transition:background .3s}.sl.done{background:var(--green)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-bottom:20px;animation:fu .4s ease}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-bottom:20px;animation:fu .4s ease;box-shadow:0 1px 4px rgba(0,0,0,0.05)}
 @keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .ch{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
 .ci{width:42px;height:42px;min-width:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
@@ -397,20 +397,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-
 .rg{display:flex;gap:6px;justify-content:center}
 .rb{width:52px;padding:10px 0;border:1px solid var(--border);border-radius:var(--rs);background:var(--input);color:var(--t2);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;font-family:'DM Sans',sans-serif}
 .rb:hover{border-color:var(--accent);color:var(--t1)}
-.rb.sel{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(59,107,219,0.3)}
+.rb.sel{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(59,107,219,0.25)}
 .rl{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:8px;width:284px}
 .br{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
 .btn{padding:14px 28px;border-radius:var(--rs);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s}
 .btn-p{background:var(--accent);color:#fff;flex:1}.btn-p:hover{background:var(--accent-l)}.btn-p:disabled{opacity:.4;cursor:not-allowed}
 .btn-s{background:transparent;border:1px solid var(--border);color:var(--t2)}.btn-s:hover{border-color:var(--t2);color:var(--t1)}
-.btn-g{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#0B1120;flex:1}.btn-g:hover{opacity:.9}.btn-g:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;flex:1}.btn-g:hover{opacity:.9}.btn-g:disabled{opacity:.4;cursor:not-allowed}
 .hero{text-align:center;padding:40px 20px}
 .big-pct{font-family:'DM Serif Display',serif;font-size:80px;line-height:1;color:var(--gold);margin-bottom:4px}
 .big-raw{font-size:16px;color:var(--t3);font-weight:500;margin-bottom:8px}
 .slbl{font-size:14px;color:var(--t2);margin-bottom:4px}
 .lvl{display:inline-block;padding:4px 14px;border-radius:100px;font-size:13px;font-weight:700;letter-spacing:.5px;margin-top:8px;color:#fff}
 .pctl{margin-top:20px;padding:20px;background:var(--input);border-radius:var(--rs);text-align:center}
-.pctl-num{font-family:'DM Serif Display',serif;font-size:42px;color:var(--accent-l)}
+.pctl-num{font-family:'DM Serif Display',serif;font-size:42px;color:var(--accent)}
 .pctl-lbl{font-size:13px;color:var(--t2);margin-top:4px}
 .bbar{position:relative;height:8px;background:var(--input);border-radius:100px;margin:20px 0 8px;overflow:visible}
 .bfill{height:100%;border-radius:100px;transition:width 1s ease;background:var(--gold)}
@@ -626,7 +626,7 @@ function SegmentComparison({ compScores, userScore, t }) {
                 onClick={() => setSegGroup(isActive ? null : g)}
                 style={{
                   padding:"8px 18px",borderRadius:100,border: isActive ? "1px solid var(--gold)" : "1px solid var(--border)",
-                  background: isActive ? "rgba(212,168,83,0.15)" : "transparent",
+                  background: isActive ? "rgba(153,110,26,0.1)" : "transparent",
                   color: isActive ? "var(--gold)" : "var(--t2)",
                   fontSize:13,fontWeight:600,fontFamily:"DM Sans,sans-serif",cursor:"pointer",transition:"all .2s",
                 }}>
@@ -654,15 +654,15 @@ function SegmentComparison({ compScores, userScore, t }) {
             }).join(" ");
             return (
               <g key={lv}>
-                <polygon points={pts} fill="none" stroke="#1E2D4A" strokeWidth="1"/>
-                <text x={cx} y={cy - r - 4} fill="#5A6B85" fontSize="9" textAnchor="middle">{lv}</text>
+                <polygon points={pts} fill="none" stroke="#D0D5E0" strokeWidth="1"/>
+                <text x={cx} y={cy - r - 4} fill="#7A8599" fontSize="9" textAnchor="middle">{lv}</text>
               </g>
             );
           })}
 
           {COMP_RANKED.map((_, i) => {
             const outerPt = ptAt(i, 5);
-            return <line key={i} x1={cx} y1={cy} x2={outerPt.x} y2={outerPt.y} stroke="#1E2D4A" strokeWidth="1"/>;
+            return <line key={i} x1={cx} y1={cy} x2={outerPt.x} y2={outerPt.y} stroke="#D0D5E0" strokeWidth="1"/>;
           })}
 
           {(() => {
@@ -677,7 +677,7 @@ function SegmentComparison({ compScores, userScore, t }) {
               segments.push(
                 <polygon key={i}
                   points={`${uP1.x},${uP1.y} ${uP2.x},${uP2.y} ${pP2.x},${pP2.y} ${pP1.x},${pP1.y}`}
-                  fill={avgAbove ? "rgba(52,199,123,0.18)" : "rgba(224,82,82,0.18)"}
+                  fill={avgAbove ? "rgba(30,153,96,0.15)" : "rgba(204,62,62,0.15)"}
                   stroke="none"/>
               );
             }
@@ -685,11 +685,11 @@ function SegmentComparison({ compScores, userScore, t }) {
           })()}
 
           <polygon points={polyPoints(peerVals)}
-            fill="rgba(91,138,239,0.06)" stroke="#5B8AEF" strokeWidth="2"
+            fill="rgba(59,107,219,0.06)" stroke="#3B6BDB" strokeWidth="2"
             strokeDasharray="6 4" opacity="0.9"/>
 
           <polygon points={polyPoints(userVals)}
-            fill="rgba(212,168,83,0.1)" stroke="#D4A853" strokeWidth="2.5"
+            fill="rgba(153,110,26,0.08)" stroke="#996E1A" strokeWidth="2.5"
             filter="url(#glow-g)"/>
 
           {COMP_RANKED.map((cKey, i) => {
@@ -713,23 +713,23 @@ function SegmentComparison({ compScores, userScore, t }) {
                 onMouseEnter={() => setHovered(cKey)}
                 onMouseLeave={() => setHovered(null)}
                 style={{cursor:"default"}}>
-                <circle cx={pPt.x} cy={pPt.y} r={isH ? 6 : 4} fill="#5B8AEF" stroke="var(--bg)" strokeWidth="2"/>
-                <circle cx={uPt.x} cy={uPt.y} r={isH ? 7 : 5} fill="#D4A853" stroke="var(--bg)" strokeWidth="2"/>
+                <circle cx={pPt.x} cy={pPt.y} r={isH ? 6 : 4} fill="#3B6BDB" stroke="#fff" strokeWidth="2"/>
+                <circle cx={uPt.x} cy={uPt.y} r={isH ? 7 : 5} fill="#996E1A" stroke="#fff" strokeWidth="2"/>
 
                 {nameLines.map((line, li) => (
-                  <text key={li} x={lx} y={ly - 20 + lyOffset + li * 14} fill={isH ? "#E8ECF4" : "#8899B4"}
+                  <text key={li} x={lx} y={ly - 20 + lyOffset + li * 14} fill={isH ? "#1A2438" : "#4A5568"}
                     fontSize={isH ? "12" : "11"} fontWeight={isH ? "700" : "500"}
                     textAnchor={anchor} dominantBaseline="central">
                     {line}
                   </text>
                 ))}
-                <text x={lx} y={ly + (nameLines.length - 1) * 14 - 2 + lyOffset} fill="#D4A853"
+                <text x={lx} y={ly + (nameLines.length - 1) * 14 - 2 + lyOffset} fill="#996E1A"
                   fontSize="11" fontWeight="700"
                   textAnchor={anchor} dominantBaseline="central">
                   You: {userVals[i].toFixed(2)}
                 </text>
                 <text x={lx} y={ly + (nameLines.length - 1) * 14 + 14 + lyOffset}
-                  fill={delta > 0 ? "#34C77B" : delta < 0 ? "#E05252" : "#5A6B85"}
+                  fill={delta > 0 ? "#1E9960" : delta < 0 ? "#CC3E3E" : "#7A8599"}
                   fontSize="10" fontWeight="600"
                   textAnchor={anchor} dominantBaseline="central">
                   {Math.abs(deltaPct).toFixed(0)}% {delta >= 0 ? t.higherThanPeers : t.lowerThanPeers}
@@ -738,17 +738,17 @@ function SegmentComparison({ compScores, userScore, t }) {
             );
           })}
 
-          <text x={cx} y={cy - 10} fill="#E8ECF4" fontSize="13" fontWeight="600" textAnchor="middle">{peerLabel}</text>
-          <text x={cx} y={cy + 8} fill="#8899B4" fontSize="11" textAnchor="middle">n = {peerN}</text>
+          <text x={cx} y={cy - 10} fill="#1A2438" fontSize="13" fontWeight="600" textAnchor="middle">{peerLabel}</text>
+          <text x={cx} y={cy + 8} fill="#4A5568" fontSize="11" textAnchor="middle">n = {peerN}</text>
         </svg>
 
         <div style={{display:"flex",gap:24,justifyContent:"center",marginTop:4,flexWrap:"wrap"}}>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
-            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#D4A853" strokeWidth="2.5"/></svg>
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#996E1A" strokeWidth="2.5"/></svg>
             {t.yourOrg}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"var(--t2)"}}>
-            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#5B8AEF" strokeWidth="2" strokeDasharray="4 3"/></svg>
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#3B6BDB" strokeWidth="2" strokeDasharray="4 3"/></svg>
             {t.peerBenchmark}
           </div>
         </div>
@@ -1026,7 +1026,7 @@ function ResultsSection({ ratings, onReset, t, lang }) {
                   <div style={{height:6,background:"var(--input)",borderRadius:100,position:"relative",overflow:"visible"}}>
                     <div style={{height:"100%",borderRadius:100,background:COMP_COLORS_MAP[cKey],width:`${userLinear}%`,transition:"width .6s"}}/>
                     <div style={{position:"absolute",top:-4,left:`${benchLinear}%`,width:2,height:14,background:"var(--t3)",borderRadius:1}}/>
-                    <div style={{position:"absolute",top:-5,left:`${userLinear}%`,width:12,height:12,borderRadius:"50%",background:"var(--gold)",border:"2px solid var(--bg)",boxShadow:"0 0 8px rgba(212,168,83,0.5)",transform:"translateX(-50%)",transition:"left .6s"}}/>
+                    <div style={{position:"absolute",top:-5,left:`${userLinear}%`,width:12,height:12,borderRadius:"50%",background:"var(--gold)",border:"2px solid var(--card)",boxShadow:"0 0 8px rgba(153,110,26,0.35)",transform:"translateX(-50%)",transition:"left .6s"}}/>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:10,color:"var(--t3)"}}>
                     <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
@@ -1036,7 +1036,7 @@ function ResultsSection({ ratings, onReset, t, lang }) {
                       {t.yourScore} <span style={{fontWeight:700,color:"var(--gold)"}}>{userVal.toFixed(2)}</span>
                     </div>
                     <div style={{fontSize:12,color:"var(--t2)"}}>
-                      {t.benchmark} <span style={{fontWeight:600,color:"var(--accent-l)"}}>{bench.importantIndex.toFixed(2)}</span>
+                      {t.benchmark} <span style={{fontWeight:600,color:"var(--accent)"}}>{bench.importantIndex.toFixed(2)}</span>
                       <span style={{marginLeft:4,fontWeight:600,color:delta>0?"var(--green)":delta<0?"var(--red)":"var(--t3)"}}>
                         ({delta >= 0 ? t.aboveTypical(Math.abs(deltaPct).toFixed(0)) : t.belowTypical(Math.abs(deltaPct).toFixed(0))})
                       </span>
@@ -1106,7 +1106,7 @@ export default function KMICApp() {
           <p className="sub">
             {t.headerSub(B.overall.n)}
           </p>
-          <div style={{marginTop:16,padding:"12px 20px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,maxWidth:600,marginLeft:"auto",marginRight:"auto",fontSize:13,color:"var(--t2)",lineHeight:1.7,textAlign:"left"}}>
+          <div style={{marginTop:16,padding:"12px 20px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,maxWidth:600,marginLeft:"auto",marginRight:"auto",fontSize:13,color:"var(--t2)",lineHeight:1.7,textAlign:"left",boxShadow:"0 1px 3px rgba(0,0,0,0.05)"}}>
             <strong style={{color:"var(--gold)"}}>{t.whatIsTitle}</strong> {t.whatIsBody}
           </div>
         </header>
